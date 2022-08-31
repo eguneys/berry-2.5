@@ -325,6 +325,17 @@ export default class AllPlays extends PlayMakes {
     this.objects.forEach(_ => _.update(dt, dt0))
   }
   _draw() {
+
+
+    let x = -1.5,
+      y = 0,
+      z = 0
+
+    this.g.texture(0xffffff, 0, x, y, z, 1920, 1080, 0, 0, 100, 100, 100, 100)
+
+    this.g.texture(0xffffff, 0, 0, 0, 0, 500, 20, 0, 0, 100, 100, 100, 100)
+    this.g.texture(0xffffff, 0, 0, 0, 0, 20, 500, 0, 0, 100, 100, 100, 100)
+
     this.objects.forEach(_ => _.draw())
   }
 }

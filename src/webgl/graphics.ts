@@ -1,6 +1,7 @@
 import { color_rgb } from './util'
 import { generateProgram } from './program'
 import { Matrix, Vec2 }  from '../vec2'
+import { Mat4, Vec3 } from './math4'
 
 export class Graphics {
 
@@ -10,10 +11,24 @@ export class Graphics {
   get width(): number { return this.canvas.width }
   get height(): number { return this.canvas.height }
 
-  projectionMatrix: Matrix
+  p_matrix: Mat4
+  c_matrix: Mat4
+
+  get v_matrix() {
+    return this.c_matrix.inverse
+  }
+
+  get vp_matrix() {
+    return this.p_matrix.mul(this.v_matrix)
+  }
+
+  get u_matrix() {
+    return this.vp_matrix
+  }
 
   constructor(readonly canvas: Canvas) { 
-    this.projectionMatrix = Matrix.projection(this.width, this.height)
+    this.p_matrix = Mat4.perspective(Math.PI*0.4, 16/9, -100, 100)
+    this.c_matrix = Mat4.lookAt(Vec3.make(0, 0, 800), Vec3.zero, Vec3.up)
   }
 
 
@@ -45,31 +60,31 @@ export class Graphics {
 
     let attributeBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, attributeBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, nb * 9 * 4, gl.DYNAMIC_DRAW)
+    gl.bufferData(gl.ARRAY_BUFFER, nb * 10 * 4, gl.DYNAMIC_DRAW)
     
     let indexBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer)
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, nb * 3 * 4, gl.DYNAMIC_DRAW)
 
-    let stride = 2 * 4 + 2 * 4 + 3 * 4 + 2 * 4
+    let stride = 3 * 4 + 2 * 4 + 3 * 4 + 2 * 4
 
     let a1loc = attributeData['aVertexPosition'].location
     gl.enableVertexAttribArray(a1loc)
-    gl.vertexAttribPointer(a1loc, 2, gl.FLOAT, false, stride, 0)
+    gl.vertexAttribPointer(a1loc, 3, gl.FLOAT, false, stride, 0)
 
 
     let a2loc = attributeData['aTextureCoord'].location
     gl.enableVertexAttribArray(a2loc)
-    gl.vertexAttribPointer(a2loc, 2, gl.FLOAT, false, stride, 2*4)
+    gl.vertexAttribPointer(a2loc, 2, gl.FLOAT, false, stride, 3*4)
 
 
     let a3loc = attributeData['aTint'].location
     gl.enableVertexAttribArray(a3loc)
-    gl.vertexAttribPointer(a3loc, 3, gl.FLOAT, false, stride, 2*4 + 2*4)
+    gl.vertexAttribPointer(a3loc, 3, gl.FLOAT, false, stride, 3*4 + 2*4)
 
     let a4loc = attributeData['aType'].location
     gl.enableVertexAttribArray(a4loc)
-    gl.vertexAttribPointer(a4loc, 2, gl.FLOAT, false, stride, 2*4 + 2*4 + 3*4)
+    gl.vertexAttribPointer(a4loc, 2, gl.FLOAT, false, stride, 3*4 + 2*4 + 3*4)
 
 
     gl.bindVertexArray(null)
@@ -124,7 +139,8 @@ export class Graphics {
     gl.useProgram(program)
 
 
-    gl.uniformMatrix3fv(uniformData['projectionMatrix'].location, false, this.projectionMatrix.array_t)
+    //gl.uniformMatrix3fv(uniformData['projectionMatrix'].location, false, this.projectionMatrix.array_t)
+    gl.uniformMatrix4fv(uniformData['u_matrix'].location, false, this.u_matrix.out)
   }
 
   glUniformUpdate(uniformData, uniform) {

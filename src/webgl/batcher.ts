@@ -2,6 +2,7 @@ import vSource from './default.vert'
 import fSource from './default.frag'
 import { color_rgb } from './util'
 import { Rectangle, Matrix } from '../vec2'
+import { Vec3, Mat4, Billboard } from './math4'
 import { Quad } from './quad'
 
 const m_template = Matrix.identity.scale(640, 360)
@@ -28,6 +29,19 @@ export class Batcher {
     g.glUseTexture(glTexture, image)
   }
 
+
+  texture(color: number, r: number, x: number, y: number, z: number, w: number, h: number, sx: number, sy: number, sw: number, sh: number, tw: number, th: number) {
+    let res = Mat4.identity
+    .scale(Vec3.make(w, h, 1))
+    //.translate(Vec3.make(-w/2, -h/2, 0))
+    .translate(Vec3.make(x, y, z))
+    let quad = Quad.make(tw, th, sx, sy, sw, sh)
+    this._els.push([0, res, color, quad, -1, -2])
+  }
+
+
+
+
   render() {
 
     let { g } = this
@@ -45,18 +59,19 @@ export class Batcher {
 
       let [def, matrix, color, quad, type, type2] = _
 
-      let el = Rectangle.unit.transform(matrix)
+      let el = Billboard.unit.transform(matrix)
       let { vertexData, indices } = el
       let { fsUv } = quad
 
       let tintData = color_rgb(color)
 
-      for (let k = 0; k < vertexData.length; k+= 2) {
+      for (let k = 0; k < vertexData.length; k+= 3) {
         _attributeBuffer[aIndex++] = vertexData[k]
         _attributeBuffer[aIndex++] = vertexData[k+1]
+        _attributeBuffer[aIndex++] = vertexData[k+2]
 
-        _attributeBuffer[aIndex++] = fsUv[k]
-        _attributeBuffer[aIndex++] = fsUv[k+1]
+        _attributeBuffer[aIndex++] = fsUv[2 * k/3]
+        _attributeBuffer[aIndex++] = fsUv[2 * k/3+1]
 
         _attributeBuffer[aIndex++] = tintData[0]
         _attributeBuffer[aIndex++] = tintData[1]
@@ -72,8 +87,8 @@ export class Batcher {
 
       if (!this._els[i+1] || this._els[i+1][0] !== _batch) {
         if (iIndex / 6 === _batch_i) {
-          console.log(i, _batch_i, iIndex / 6, iIndex)
-          throw 3
+          //console.log(i, _batch_i, iIndex / 6, iIndex)
+          //throw 3
         }
         _batch = this._els[i+1]?.[0]
         let { program, uniformData, indexBuffer, attributeBuffer, vao } = (def || this._def)
