@@ -2,7 +2,7 @@ import vSource from './default.vert'
 import fSource from './default.frag'
 import { color_rgb } from './util'
 import { Rectangle, Matrix } from '../vec2'
-import { Vec3, Mat4, Billboard } from './math4'
+import { Quat, Vec3, Mat4, Billboard } from './math4'
 import { Quad } from './quad'
 
 const m_template = Matrix.identity.scale(640, 360)
@@ -30,11 +30,17 @@ export class Batcher {
   }
 
 
-  texture(color: number, r: number, x: number, y: number, z: number, w: number, h: number, sx: number, sy: number, sw: number, sh: number, tw: number, th: number) {
+  texture(color: number, rx: number, ry: number, rz: number, x: number, y: number, z: number, w: number, h: number, sx: number, sy: number, sw: number, sh: number, tw: number, th: number) {
+    let _q = Quat.identity
+    .rotateX(rx)
+    .rotateY(ry)
+    .rotateZ(rz)
     let res = Mat4.identity
-    .scale(Vec3.make(w, h, 1))
-    //.translate(Vec3.make(-w/2, -h/2, 0))
     .translate(Vec3.make(x, y, z))
+    .translate(Vec3.make(1/2, 1/2, 0))
+    .rotate(_q)
+    .scale(Vec3.make(w, h, 1))
+    .translate(Vec3.make(-1/2, -1/2, 0))
     let quad = Quad.make(tw, th, sx, sy, sw, sh)
     this._els.push([0, res, color, quad, -1, -2])
   }

@@ -11,8 +11,6 @@ export class Graphics {
   get width(): number { return this.canvas.width }
   get height(): number { return this.canvas.height }
 
-  p_matrix: Mat4
-  c_matrix: Mat4
 
   get v_matrix() {
     return this.c_matrix.inverse
@@ -26,10 +24,15 @@ export class Graphics {
     return this.vp_matrix
   }
 
-  constructor(readonly canvas: Canvas) { 
-    this.p_matrix = Mat4.perspective(Math.PI*0.4, 16/9, -100, 100)
-    this.c_matrix = Mat4.lookAt(Vec3.make(0, 0, 800), Vec3.zero, Vec3.up)
+  get p_matrix() {
+    return this.camera.p_matrix
   }
+
+  get c_matrix() {
+    return this.camera.c_matrix
+  }
+
+  constructor(readonly canvas: Canvas, readonly camera: Camera) {}
 
 
   glOnce = (options: GlOnceOptions = {}) => {
@@ -44,6 +47,7 @@ export class Graphics {
     gl.clearColor(...color_rgb(color||0x000000), 1)
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+    gl.enable(gl.DEPTH_TEST)
   }
 
   glProgram = (vSource: string, fSource: string, nb: number) => {
@@ -166,7 +170,7 @@ export class Graphics {
 
   glClear() {
     let { gl } = this
-    gl.clear(gl.COLOR_BUFFER_BIT)
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
   }
 
   glDraw(nb, vao) {

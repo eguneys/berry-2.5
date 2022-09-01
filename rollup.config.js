@@ -6,7 +6,8 @@ import url from '@rollup/plugin-url'
 import copy from 'rollup-plugin-copy'
 //import { string } from 'rollup-plugin-string'
 
-const serve = require('rollup-plugin-serve')
+import dev from 'rollup-plugin-dev'
+//const serve = require('rollup-plugin-serve')
 const livereload = require('rollup-plugin-livereload')
 
 const { terser } = require('rollup-plugin-terser')
@@ -51,7 +52,8 @@ export default args => {
         target: 'index.html'
       }),
       ...(prod ? [] : [
-        serve({ contentBase: 'dist', port: 3000 }),
+        //serve({ contentBase: 'dist', port: 3000 }),
+        dev({dirs: ['dist'], port: 3000 }),
         livereload({ watch: 'dist', port: 8080 })
       ])
     ]

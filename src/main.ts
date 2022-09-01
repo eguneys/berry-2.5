@@ -1,9 +1,12 @@
 import { w, h, colors } from './shared'
 import { Vec2 } from './vec2'
+import { Vec3 } from './webgl/math4'
 import Play from './play'
-import { Pointer, bind_pointer } from './pointer'
+//import { Pointer, bind_pointer } from './pointer'
+import { Input } from './input'
 import { Canvas, Graphics, Batcher } from './webgl'
 import sprites_png from '../assets/sprites.png'
+import Camera from './camera'
 
 function load_image(path: string): Promise<HTMLImageElement> {
   return new Promise(resolve => {
@@ -48,14 +51,18 @@ export default function app(element: HTMLElement) {
 
 function start(element: HTMLElement, image: HTMLImageElement) {
 
+  let c = new Camera(Vec3.make(0, 100, 200), Vec3.zero)
   let canvas = new Canvas(element, w, h)
-  let graphics = new Graphics(canvas)
+  let graphics = new Graphics(canvas, c)
   let g = new Batcher(graphics)
 
-  let m = new Pointer().init(bind_pointer(canvas.$canvas))
+  let i = new Input().init()
+  //let m = new Pointer().init(bind_pointer(canvas.$canvas))
   let _ctx = {
+    c,
     g,
-    m
+    i,
+   // m
   }
 
   let p = new Play(_ctx).init()
@@ -65,7 +72,7 @@ function start(element: HTMLElement, image: HTMLImageElement) {
 
   loop((dt: number, dt0: number) => {
 
-    m.update(dt, dt0)
+    i.update(dt, dt0)
     p.update(dt, dt0)
 
 

@@ -2,8 +2,15 @@ import { w, h, colors, ticks } from './shared'
 import { ti, completed, read, update, tween } from './anim'
 import { Line, Vec2, Rectangle, Circle } from './vec2'
 import { generate, psfx } from './audio'
+import { steer_behaviours,
+  b_arrive_steer
+
+} from './rigid'
 
 import { arr_shuffle } from './util'
+
+import { lerp } from './lerp'
+
 
 const quick_burst = (radius: number, start: number = 0.8, end: number = 0.2) => 
 tween([start, start, 1, end].map(_ => _ * radius), [ticks.five + ticks.three, ticks.three * 2, ticks.three * 2])
@@ -60,6 +67,10 @@ function arr_remove(arr: Array<A>, a: A) {
   arr.splice(arr.indexOf(a), 1)
 }
 
+function arr_replace(arr: Array<A>, r: Array<A>) {
+  arr.length = 0
+  arr.push(...r)
+}
 
 
 const slow_burst = (radius: number, rng: RNG = random) => 
@@ -78,8 +89,10 @@ const on_interval_lee = (t, life, life0, lee: Array<number>) => {
 
 abstract class Play {
 
+  get c() { return this.ctx.c }
   get g() { return this.ctx.g }
   get m() { return this.ctx.m }
+  get i() { return this.ctx.i }
 
   data: any
 
@@ -286,16 +299,73 @@ abstract class WithRigidPlays extends WithPlays {
     let { v_pos, wh, radius } = this.data
     this.v_target.set_in(v_pos.x, v_pos.y)
     this.r_wh = wh || (radius && Vec2.make(radius, radius)) || this.r_wh
-    //this._bh = steer_behaviours(this.v_target, this.r_opts, this.r_bs)
+    this._bh = steer_behaviours(this.v_target, this.r_opts, this.r_bs)
 
     return super.init()
   }
 
 
   update(dt: number, dt0: number) {
-    //this._bh.update(dt, dt0)
+    this._bh.update(dt, dt0)
     super.update(dt, dt0)
   }
+}
+
+
+class Player extends WithRigidPlays {
+
+
+  _init() {
+    this.v_horiz_target = Vec2.zero
+    arr_replace(this.r_bs, [
+      [b_arrive_steer(this.v_horiz_target), 1]
+    ])
+  }
+
+  _update(dt: number, dt0: number) {
+
+    let { just_ons, been_ons } = this.i
+
+    let left = been_ons.find(_ => _[0] === 'ArrowLeft')?.[1],
+      right = been_ons.find(_ => _[0] === 'ArrowRight')?.[1]
+
+    if (left > 0) {
+      this.v_horiz_target.x = this.x - (left / ticks.one) * 100
+    }
+    if (left === -1 || right === -1) {
+      this.v_horiz_target.x = this.x
+    }
+    if (right > 0) {
+      this.v_horiz_target.x = this.x + (right / ticks.one) * 100
+    }
+
+    let target_x = this.x - this.c.o.x
+    let x= 0
+
+    let scroll_x = 0
+
+    let dx1 = -40
+    let dx2 = 40
+
+    if (target_x < 0) {
+      let d = target_x + 40
+      if (d < 0) scroll_x = d
+    }
+    if (target_x > 2 * x) {
+      let d = target_x - 40
+      if (d > 0) scroll_x = d
+    }
+
+    this.c.o.x = lerp(this.c.o.x, this.c.o.x + scroll_x, 0.4)
+    this.c.l.x = lerp(this.c.l.x, this.c.l.x + scroll_x, 0.4)
+  }
+
+  _draw() {
+    let { w, h, x, y } = this
+    this.g.texture(0xff0000, 0, 0, 0, x, y + h/2, 100, w, h, 0, 0, 100, 100, 100, 100)
+    this.g.texture(0x000033, Math.PI*0.5, 0, 0, x, y + 1, 100, w * 2, h, 0, 0, 100, 100, 100, 100)
+  }
+
 }
 
 export default class AllPlays extends PlayMakes {
@@ -308,33 +378,46 @@ export default class AllPlays extends PlayMakes {
     return o.findLast(_ => _ instanceof Ctor)
   }
 
-  _shake = 0
-
-  shake(radius) {
-    this._shake = this._shake * 0.6 + radius
-  }
-
   _init() {
 
     this.objects = []
     this.ui = []
 
+    this.make(Player, {
+      v_pos: Vec2.zero,
+      wh: Vec2.make(30, 40)
+    })
+
   }
 
   _update(dt: number, dt0: number) {
+    //this.c.o.y = 80 - Math.sin(this.life * 0.0001) * 80
+    //this.c.l.y = 80 - Math.sin(this.life * 0.0001) * 80
     this.objects.forEach(_ => _.update(dt, dt0))
   }
   _draw() {
 
 
-    let x = -1.5,
-      y = 0,
+    let x = -1920 + 100,
+      y = -1080 + 100,
       z = 0
 
-    this.g.texture(0xffffff, 0, x, y, z, 1920, 1080, 0, 0, 100, 100, 100, 100)
+    this.g.texture(0xffffff, 0, 0, Math.sin(this.life*0.001) * Math.PI * 2, -x, y, -z, 1920, 1080, 0, 0, 100, 100, 100, 100)
 
-    this.g.texture(0xffffff, 0, 0, 0, 0, 500, 20, 0, 0, 100, 100, 100, 100)
-    this.g.texture(0xffffff, 0, 0, 0, 0, 20, 500, 0, 0, 100, 100, 100, 100)
+    this.g.texture(0xffffff, 0, 0, Math.sin(this.life * 0.0001) * Math.PI * 2, -100, 0, -50, 500, 20, 0, 0, 100, 100, 100, 100)
+    this.g.texture(0x00ffff, 0, 0, 0, 0, 0, 0, -20, 500, 0, 0, 100, 100, 100, 100)
+    this.g.texture(0xffff00, 0, 0, 0, 100, 0, -100, 20, 500, 0, 0, 100, 100, 100, 100)
+    this.g.texture(0x0000ff, 0, 0, 0, -20, 0, 190, 20, 500, 0, 0, 100, 100, 100, 100)
+    this.g.texture(0xff00ff, 0, 0, 0, 0, 0, -199, 200, 100, 0, 0, 100, 100, 100, 100)
+
+
+    this.g.texture(0xffff00, Math.PI*0.5, 0, 0, 0, 0, 0, 1200, 200, 0, 0, 100, 100, 100, 100)
+    this.g.texture(0xfffff0, Math.PI*0.5, 0, 0, 0, 0, 200, 1200, 200, 0, 0, 100, 100, 100, 100)
+
+    /*
+    this.g.texture(0xff0000, 0, 0, 0, 0, 20, -100, 20, 50, 0, 0, 100, 100, 100, 100)
+    this.g.texture(0x000033, Math.PI*0.5, 0, 0, 0, 1, -100, 50, 50, 0, 0, 100, 100, 100, 100)
+   */
 
     this.objects.forEach(_ => _.draw())
   }

@@ -227,6 +227,30 @@ export class Mat4 {
     ])
   }
 
+
+  static from_quat = (q: Quat) => {
+    let [x, y, z, w] = q.out
+
+    let x2 = x + x, y2 = y + y, z2 = z + z
+
+    let xx = x * x2,
+      yx = y * x2,
+      yy = y * y2,
+      zx = z * x2,
+      zy = z * y2,
+      zz = z * z2,
+      wx = w * x2,
+      wy = w * y2,
+      wz = w * z2
+
+    return Mat4.make([
+      1 - yy - zz, yx + wz, zx - wy, 0,
+      yx - wz, 1 - xx - zz, zy + wx, 0,
+      zx + wy, zy - wx, 1 - xx - yy, 0,
+      0, 0, 0, 1
+    ])
+  }
+
   get inverse() {
 
     let [
@@ -294,6 +318,9 @@ export class Mat4 {
   constructor(readonly out: Array<number>) {}
 
 
+  rotate(q: Quat) {
+    return this.mul(Mat4.from_quat(q))
+  }
 
   scale(v: Vec3) {
     let m = this.out
@@ -380,3 +407,89 @@ export class Mat4 {
   }
 }
 
+
+
+export class Quat {
+
+  static make = (out: Array<number>) => new Quat(out)
+
+  static get identity() {
+    return Quat.make([0, 0, 0, 1])
+  }
+
+
+  get clone() {
+    return new Quat(this.out.slice(0))
+  }
+
+  rotateX(r: number) {
+    let { clone } = this
+    return clone.rotateX_in(r)
+  }
+
+  rotateX_in(r: number) {
+    r *= 0.5
+
+    let m = this.out
+
+    let bx = Math.sin(r),
+      bw = Math.cos(r)
+
+    let [ax, ay, az, aw] = m
+
+    m[0] = ax * bw + aw * bx
+    m[1] = ay * bw + az * bx
+    m[2] = az * bw - ay * bx
+    m[3] = aw * bw - ax * bx
+
+    return this
+  }
+
+  rotateY(r: number) {
+    let { clone } = this
+    return clone.rotateY_in(r)
+  }
+
+  rotateY_in(r: number) {
+    r *= 0.5
+
+    let m = this.out
+
+    let by = Math.sin(r),
+      bw = Math.cos(r)
+
+    let [ax, ay, az, aw] = m
+
+    m[0] = ax * bw - az * by
+    m[1] = ay * bw + aw * by
+    m[2] = az * bw + ax * by
+    m[3] = aw * bw - ay * by
+    return this
+  }
+
+  rotateZ(r: number) {
+    let { clone } = this
+    return clone.rotateZ_in(r)
+  }
+
+  rotateZ_in(r: number) {
+    r *= 0.5
+
+    let m = this.out
+
+    let bz = Math.sin(r),
+      bw = Math.cos(r)
+
+    let [ax, ay, az, aw] = m
+
+    m[0] = ax * bw + ay * bz
+    m[1] = ay * bw - ax * bz
+    m[2] = az * bw + aw * bz
+    m[3] = aw * bw - az * bz
+    return this
+  }
+
+
+
+  constructor(readonly out: Array<number>) {}
+}
