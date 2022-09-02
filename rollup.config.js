@@ -53,7 +53,7 @@ export default args => {
       }),
       ...(prod ? [] : [
         //serve({ contentBase: 'dist', port: 3000 }),
-        dev({dirs: ['dist'], port: 3000 }),
+        dev({dirs: ['dist'], host: '0.0.0.0', port: 3000 }),
         livereload({ watch: 'dist', port: 8080 })
       ])
     ]
