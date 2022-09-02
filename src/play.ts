@@ -2,15 +2,10 @@ import { w, h, colors, ticks } from './shared'
 import { ti, completed, read, update, tween } from './anim'
 import { Line, Vec2, Rectangle, Circle } from './vec2'
 import { generate, psfx } from './audio'
-import { steer_behaviours,
-  b_arrive_steer,
-  b_avoid_circle_steer
-
-} from './rigid'
-
 import { arr_shuffle } from './util'
 
 import { appr, lerp } from './lerp'
+import { make_rigid, rigid_update } from './rigid'
 
 
 const quick_burst = (radius: number, start: number = 0.8, end: number = 0.2) => 
@@ -71,6 +66,10 @@ function arr_remove(arr: Array<A>, a: A) {
 function arr_replace(arr: Array<A>, r: Array<A>) {
   arr.length = 0
   arr.push(...r)
+}
+
+function arr_scale(arr: Array<A>, n: number) {
+  return arr.map(_ => _ * n)
 }
 
 
@@ -207,6 +206,11 @@ abstract class WithPlays extends PlayMakes {
     return this.plays.camera
   }
 
+
+  get alive() {
+    return this._alive
+  }
+
   shake(radius) {
     this.plays.shake(radius)
   }
@@ -221,7 +225,9 @@ abstract class WithPlays extends PlayMakes {
 
     if (group) {
       group.push(this)
+      this._alive = true
     }
+
     return super.init()
   }
 
@@ -230,9 +236,11 @@ abstract class WithPlays extends PlayMakes {
     let { group } = this.data
     if (group) {
       arr_remove(group, this)
+    this._alive = false
     }
     this.on_dispose.forEach(_ => _(this, reason))
     this._dispose(reason)
+
   }
 
 
@@ -304,14 +312,14 @@ abstract class WithRigidPlays extends WithPlays {
     let { v_pos, wh, radius } = this.data
     this.v_target.set_in(v_pos.x, v_pos.y)
     this.r_wh = wh || (radius && Vec2.make(radius, radius)) || this.r_wh
-    this._bh = steer_behaviours(this.v_target, this.r_opts, this.r_bs)
+    //this._bh = steer_behaviours(this.v_target, this.r_opts, this.r_bs)
 
     return super.init()
   }
 
 
   update(dt: number, dt0: number) {
-    this._bh.update(dt, dt0)
+    //this._bh.update(dt, dt0)
     super.update(dt, dt0)
   }
 }
@@ -336,124 +344,118 @@ class Trail extends WithPlays {
 }
 
 
-class Player extends WithRigidPlays {
+class PlayerFloor extends WithPlays {
 
-  v_target_j = Vec2.unit
-
-  readonly r_opts_j: RigidOptions = {
-    mass: 1000,
-    air_friction: 0.9,
-    max_speed: 500,
-    max_force:10 
-  };
-
-  readonly r_bs_j = []
-
-  get vs_j() {
-    return this._bh_j._body.vs
+  get x() {
+    return this._floor_x.x
   }
 
   get y() {
-    return this.vs_j.y
+    return this._floor_y.x
   }
 
   _init() {
 
-    let { v_pos, wh, radius } = this.data
-    this.v_target_j.set_in(v_pos.x, v_pos.y)
-    this._bh_j = steer_behaviours(this.v_target_j, this.r_opts_j, this.r_bs_j)
+    let { x } = this.data.v_pos
 
-    this.j_circle = Circle.unit
-    this.j_circle.r = 0
 
-    this.v_horiz_target = Vec2.zero
-    arr_replace(this.r_bs, [
-      [b_arrive_steer(this.v_horiz_target), 1]
-    ])
-    arr_replace(this.r_bs_j, [
-      [b_avoid_circle_steer(this.circle.normalize, Math.PI / 2), 0.1],
-      [b_avoid_circle_steer(this.j_circle, Math.PI / 2), 0.2],
-      [b_arrive_steer(Vec2.zero), 0.6],
-    ])
+    this._floor_y = make_rigid(0, {
+      mass: 100,
+      air_friction: 0.9,
+      max_speed: 100,
+      max_force: 10
+    })
 
-  }
-
-  get save() {
-    return [
-      this.vel.x,
-      this.x
-    ]
+    this._floor_x = make_rigid(x, {
+      mass: 100,
+      air_friction: 0.9,
+      max_speed: 100,
+      max_force: 10
+    })
   }
 
   _update(dt: number, dt0: number) {
 
-    let { just_ons, been_ons } = this.i
 
-    this._bh_j.update(dt, dt0)
+    this._floor_x.force = 0
+    this._floor_y.force = 0
 
-    let left = been_ons.find(_ => _[0] === 'ArrowLeft')?.[1],
-      right = been_ons.find(_ => _[0] === 'ArrowRight')?.[1]
+    user_update(this)
 
-    let f = just_ons.find(_ => _[0] === 'f')
+    if (this._floor_y.x > 0 && this._floor_y.vx < 0.1) {
 
-    if (f) {
-      this.j_circle.o = this.circle.o
-      this.j_circle.r = this.circle.r * 8
+      let m_s = this._floor_y.opts.max_speed,
+        m_f = this._floor_y.opts.max_force
+      let d = this._floor_y.x
+
+      let r_s = m_s * (d / 100)
+      let c_s = Math.min(r_s, m_s)
+      let d_v = c_s
+
+      this._floor_y.force = -c_s / m_s * m_f
     }
 
-    if (this.on_interval(ticks.one)) {
-      this.j_circle.r = appr(this.j_circle.r, 0, 8)
+    rigid_update(this._floor_x, dt, dt0)
+    rigid_update(this._floor_y, dt, dt0)
+
+    if (this._floor_y.x < 0) {
+      this._floor_y.x = 0
+      this._floor_y.x0 = 0
     }
 
-    if (left > 0) {
-      this.v_horiz_target.x = this.x - (left / ticks.one) * 100
-    }
-    if (left === -1 || right === -1) {
-      this.v_horiz_target.x = this.x
-    }
-    if (right > 0) {
-      this.v_horiz_target.x = this.x + (right / ticks.one) * 100
-    }
-
-
-    let { save } = this
-    if (this.on_interval(ticks.half)) {
-      let { save0 } = this
-
-      if (save0) {
-        if (Math.abs(save0[1] - save[1]) > 100) {
-          this.make(Trail, { v_pos: this.vs.sub(this.vel.scale(4)) })
-        }
-      }
-
-      this.save0 = save
-    }
-
-    let target_x = this.x - this.c.o.x
-    let x= 0
-
-    let scroll_x = 0
-
-    let dx1 = -40
-    let dx2 = 40
-
-    if (target_x < 0) {
-      let d = target_x + 40
-      if (d < 0) scroll_x = d
-    }
-    if (target_x > 2 * x) {
-      let d = target_x - 40
-      if (d > 0) scroll_x = d
-    }
-
-    this.c.o.x = lerp(this.c.o.x, this.c.o.x + scroll_x, 0.4)
-    this.c.l.x = lerp(this.c.l.x, this.c.l.x + scroll_x, 0.4)
   }
 
   _draw() {
-    let { w, h, x, y } = this
-    this.g.texture(0xff0000, 0, 0, 0, x, y + h/2, 100, w, h, 0, 0, 100, 100, 100, 100)
-    this.g.texture(0x000033, Math.PI*0.5, 0, 0, x, y + 1, 100, w * 2, h, 0, 0, 100, 100, 100, 100)
+    
+    let { x, y } = this
+
+    let w = 40,
+      h = 60
+
+
+    this.g.texture(0x000000, 0, 0, 0, x, -y - h/2, -100, w, h, 0, 0, 48, 48, 512, 512)
+    this.g.texture(0x100000, Math.PI*0.5, 0, 0, x, -y - 1, -100, w * 2, h, 0, 0, 48, 48, 512, 510)
+
+  }
+}
+
+
+class Cinema extends WithPlays {
+
+
+  _init() {
+  }
+
+
+  _update(dt: number, dt0: number) {
+
+    if (!this._user || !this._user.alive) {
+      this._user = this.plays.tag(PlayerFloor, 'user')
+    }
+
+    if (this._user) {
+      this.c.o.x = this._user.x
+      this.c.l.x = this.c.o.x
+    }
+  }
+}
+
+
+const user_update = (_p: PlayerFloor, dt: number, dt0: number) => {
+  let left = _p.i.been_ons.find(_ => _[0] === 'ArrowLeft')?.[1],
+    right = _p.i.been_ons.find(_ => _[0] === 'ArrowRight')?.[1]
+
+  let f = _p.i.just_ons.find(_ => _ === 'f')
+
+  if (f) {
+    _p._floor_y.force = 1
+  }
+
+  if (left) {
+    _p._floor_x.force = -1
+  }
+  if (right) {
+    _p._floor_x.force = 1
   }
 
 }
@@ -468,16 +470,25 @@ export default class AllPlays extends PlayMakes {
     return o.findLast(_ => _ instanceof Ctor)
   }
 
+  tag(Ctor: any, tag: string, o = this.objects) {
+    return o.find(_ => _ instanceof Ctor && _.data.tag === tag)
+  }
+
   _init() {
 
     this.objects = []
     this.ui = []
 
-    this.make(Player, {
-      v_pos: Vec2.zero,
-      wh: Vec2.make(30, 40)
+    this.make(Cinema)
+    this.make(PlayerFloor, {
+      tag: 'user',
+      v_pos: Vec2.zero
     })
 
+    this.make(PlayerFloor, {
+      tag: 'ai',
+      v_pos: Vec2.make(100, 0)
+    })
   }
 
   _update(dt: number, dt0: number) {
@@ -486,7 +497,6 @@ export default class AllPlays extends PlayMakes {
     this.objects.forEach(_ => _.update(dt, dt0))
   }
   _draw() {
-
 
     let x = -1920 + 100,
       y = -1080 + 100,
@@ -502,7 +512,7 @@ export default class AllPlays extends PlayMakes {
 
 
     this.g.texture(0xffff00, Math.PI*0.5, 0, 0, 0, 0, 0, 1200, 200, 0, 0, 100, 100, 100, 100)
-    this.g.texture(0xfffff0, Math.PI*0.5, 0, 0, 0, 0, 200, 1200, 200, 0, 0, 100, 100, 100, 100)
+    this.g.texture(0xfffff0, Math.PI*0.5, 0, 0, 0, 0, -200, 1200, 200, 0, 0, 100, 100, 100, 100)
 
     /*
     this.g.texture(0xff0000, 0, 0, 0, 0, 20, -100, 20, 50, 0, 0, 100, 100, 100, 100)

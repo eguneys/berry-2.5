@@ -41,7 +41,7 @@ export class Vec3 {
 
   static get unit() { return new Vec3(1, 1, 1) }
   static get zero() { return new Vec3(0, 0, 0) }
-  static get up() { return new Vec3(0, 1, 0) }
+  static get up() { return new Vec3(0, -1, 0) }
 
   get vs(): Array<number> {
     return [this.x, this.y, this.z]

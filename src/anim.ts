@@ -17,8 +17,10 @@ export function update(t: Tween, dt: number, dt0: number) {
 }
 
 
-export function tween(values: Array<number>, durations: Array<number>) {
+export function tween(_values: Array<number>, _durations: Array<number>, loop: number = 0) {
 
+  let values = _values.slice(0)
+  let durations = _durations.slice(0)
   let _value = values[0],
   _completed = false
 
@@ -51,7 +53,13 @@ export function tween(values: Array<number>, durations: Array<number>) {
       _t = 0
 
       if (_i >= values.length - 1) {
-        _completed = true
+        if (loop === 1) {
+          _i = 0
+          values = values.slice(0).reverse()
+          durations = durations.slice(0).reverse()
+        } else {
+          _completed = true
+        }
       }
     }
 

@@ -42,7 +42,7 @@ export class Batcher {
     .scale(Vec3.make(w, h, 1))
     .translate(Vec3.make(-1/2, -1/2, 0))
     let quad = Quad.make(tw, th, sx, sy, sw, sh)
-    this._els.push([0, res, color, quad, -1, -2])
+    this._els.push([0, res, color, quad, -1, th])
   }
 
 
@@ -68,7 +68,6 @@ export class Batcher {
       let el = Billboard.unit.transform(matrix)
       let { vertexData, indices } = el
       let { fsUv } = quad
-
       let tintData = color_rgb(color)
 
       for (let k = 0; k < vertexData.length; k+= 3) {
