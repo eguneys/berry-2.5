@@ -1,3 +1,4 @@
+import packageJson from './package.json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 const htmlTemplate = require('rollup-plugin-generate-html-template')
 
@@ -12,6 +13,7 @@ const livereload = require('rollup-plugin-livereload')
 
 const { terser } = require('rollup-plugin-terser')
 import { rollupPluginSpglsl } from 'spglsl'
+import replace from '@rollup/plugin-replace'
 
 let extensions = ['.ts', '.tsx']
 export default args => {
@@ -33,6 +35,13 @@ export default args => {
       clearScreen: false
     },
     plugins: [
+      replace({
+        preventAssignment: true,
+        values: {
+          '__VERSION__': packageJson.version,
+          '__DEV__': !prod
+        }
+      }),
       nodeResolve({ extensions, browser: true }),
       babel({ extensions, babelHelpers: 'bundled' }),
       copy({

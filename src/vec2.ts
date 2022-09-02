@@ -346,6 +346,8 @@ export class Circle {
 
   static get unit() { return Circle.make(0, 0, 1) }
 
+  get normalize() { return Circle.make(this.o.x, this.o.y, 1) }
+
   scale(n: number) { return Circle.make(this.o.x, this.o.y, this.r * n) }
 
   copy_in(circle: Circle) {  

@@ -33,7 +33,7 @@ fragmentSource: string): Program {
   gl.attachShader(glProgram, gl_fShader)
   gl.linkProgram(glProgram)
 
-  if (!gl.getProgramParameter(glProgram, gl.LINK_STATUS)) {
+  if (__DEV__ && !gl.getProgramParameter(glProgram, gl.LINK_STATUS)) {
     logProgramError(gl, glProgram, gl_vShader, gl_fShader)
   }
 

@@ -269,7 +269,7 @@ function separation_steer(position: Vec2, group: Array<Vec2>, max_speed: number)
 
 
 function avoid_circle_steer(position: Vec2, target: Circle, max_speed: number, zero_angle: number) {
-  return flee_steer(position, target.o, max_speed, zero_angle, target.r * 1.2)
+  return flee_steer(position, target.o, max_speed, zero_angle, target.r)
 }
 
 function flee_steer(position: Vec2, target: Vec2, max_speed: number, zero_angle: number, slowing_distance: number) {
@@ -288,7 +288,7 @@ function flee_steer(position: Vec2, target: Vec2, max_speed: number, zero_angle:
 function arrive_steer(position: Vec2, target: Vec2, max_speed: number, slowing_distance: number) {
   let target_offset = target.sub(position)
   let distance = target_offset.length
-  if (distance < 20) {
+  if (distance < 2) {
     return Vec2.zero
   }
   let ramped_speed = max_speed * (distance / slowing_distance)
