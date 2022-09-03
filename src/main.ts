@@ -4,7 +4,8 @@ import { Vec3 } from './webgl/math4'
 import Play from './play'
 //import { Pointer, bind_pointer } from './pointer'
 import { Input } from './input'
-import { Canvas, Graphics, Batcher } from './webgl'
+//import { Canvas, Graphics, Batcher } from './webgl'
+import { Canvas, Graphics } from './canvas'
 import sprites_png from '../assets/sprites.png'
 import Camera from './camera'
 
@@ -50,15 +51,16 @@ export default function app(element: HTMLElement) {
 
 
 function start(element: HTMLElement, image: HTMLImageElement) {
-  let c = new Camera(Vec3.make(0, -100, -200), Vec3.zero)
+  //let c = new Camera(Vec3.make(0, -100, -200), Vec3.zero)
   let canvas = new Canvas(element, w, h)
-  let graphics = new Graphics(canvas, c)
-  let g = new Batcher(graphics)
+  let graphics = new Graphics(canvas)
+  //let g = new Batcher(graphics)
+  let g = graphics
 
   let i = new Input().init()
   //let m = new Pointer().init(bind_pointer(canvas.$canvas))
   let _ctx = {
-    c,
+  //  c,
     g,
     i,
    // m
@@ -66,7 +68,7 @@ function start(element: HTMLElement, image: HTMLImageElement) {
 
   let p = new Play(_ctx).init()
 
-  g.init(colors.bg, image)
+  g.init(image)
   let t = 0
 
   loop((dt: number, dt0: number) => {
@@ -92,9 +94,11 @@ function start(element: HTMLElement, image: HTMLImageElement) {
 
     t += dt
 
+    g.clear()
+
     p.draw()
 
-    g.render()
+    //g.render()
 
 
 
