@@ -73,6 +73,15 @@ function arr_scale(arr: Array<A>, n: number) {
 }
 
 
+function arr_flatMap2(arr: Array<A>, fn) {
+  let res = []
+  for (let i = 0; i < arr.length - 1; i+=2) {
+    let _ = fn(arr[i], arr[i+1])
+    _ && res.push(_)
+  }
+  return res.flat()
+}
+
 const slow_burst = (radius: number, rng: RNG = random) => 
 tween([0.1, 0.1, 0.5, 1].map(_ => _ * radius), arr_shuffle([ticks.five + ticks.three, ticks.three * 2, ticks.five * 2, ticks.five, ticks.three * 2], rng))
 
@@ -346,76 +355,112 @@ class Trail extends WithPlays {
 
 class PlayerFloor extends WithPlays {
 
-  get x() {
-    return this._floor_x.x
-  }
 
-  get y() {
-    return this._floor_y.x
+  get res() {
+    return this._a.res
   }
 
   _init() {
-
-    let { x } = this.data.v_pos
-
-
-    this._floor_y = make_rigid(0, {
-      mass: 100,
-      air_friction: 0.9,
-      max_speed: 100,
-      max_force: 10
-    })
-
-    this._floor_x = make_rigid(x, {
-      mass: 100,
-      air_friction: 0.9,
-      max_speed: 100,
-      max_force: 10
-    })
+    this._facing = 1
+    this.__x = 0
+    this._a = new AnimState(_f_idle)
   }
 
   _update(dt: number, dt0: number) {
 
+    this._a.update(dt, dt0)
 
-    this._floor_x.force = 0
-    this._floor_y.force = 0
+    if (!this._a.res) {
+
+     if (this._a._f === _f_turn) {
+       this._facing *= -1
+     }
+
+     if (this._a._f === _f_jump) {
+      this._a = new AnimState(_f_land, false)
+     } else {
+       if (this._a._f === _f_walk) {
+         this.__x = this.__x + (96 - 24) * this._facing
+       }
+       this._a = new AnimState(_f_idle)
+     }
+    }
 
     user_update(this)
-
-    if (this._floor_y.x > 0 && this._floor_y.vx < 0.1) {
-
-      let m_s = this._floor_y.opts.max_speed,
-        m_f = this._floor_y.opts.max_force
-      let d = this._floor_y.x
-
-      let r_s = m_s * (d / 100)
-      let c_s = Math.min(r_s, m_s)
-      let d_v = c_s
-
-      this._floor_y.force = -c_s / m_s * m_f
-    }
-
-    rigid_update(this._floor_x, dt, dt0)
-    rigid_update(this._floor_y, dt, dt0)
-
-    if (this._floor_y.x < 0) {
-      this._floor_y.x = 0
-      this._floor_y.x0 = 0
-    }
-
   }
 
   _draw() {
 
+    let { __x } = this
+    let { res: [x, y, w, h, _x, _y] } = this
 
-    this.g.sspr(Math.sin(this.life * 0.001) * Math.PI, 96/2, 64/2, 96, 64, 0, 0, 96, 64)
-
-    this.g.sspr(Math.PI/2, 96, 0, 96*2, 64*2, 0, 0, 96, 64, true)
-
-    this.g.sspr(Math.sin(this.life * 0.001) * Math.PI * 2, 48 + 96, 32 + 64, 96, 64, 0, 0, 96, 64, true)
-
+    this.g.sspr(0, 120+_x * this._facing + __x, 200+_y, w, h, x, y, w, h, this._facing === -1)
   }
 }
+
+/*
+
+// idle 0
+// anticipation 1 - smear 3-8 - air 4
+
+
+   f
+0  0
+
+1  1
+   [3,8]
+   4
+
+*/
+
+let _ff = [
+  [0, 288, 48, 96, 0, 0],
+  [48,288, 48, 96, 0, 0],
+  [96,288, 48, 96, 0, -160],
+  [160,0,48, 160, 0, -80],
+  [400,0,48, 160, 0, -80],
+  [0, 192, 96, 96, 24, 0],
+  [144, 288, 48, 96, 0, 0]
+]
+
+let _f_idle = [0, 1]
+let _f_jump = [1, 1, 3, 5, 2, 1]
+let _f_walk = [5, 6]
+
+let _f_land = [4, 5]
+let _f_turn = [6, 3]
+
+
+class AnimState {
+
+  get res() {
+    let [_, comp] = read(this._th)
+    if (!comp) {
+      let [f, n] = this._e[Math.floor(_)]
+
+      let [x, y, w, h, _x, _y] = _ff[f]
+
+      return [x + w * n, y, w, h, _x, _y, Math.floor(_)]
+    }
+  }
+  update(dt: number, dt0: number) {
+    update(this._th, dt, dt0)
+
+    if (!this.res && this.loop) {
+      this._th = tween([...this._e.keys(), this._e.length], [ticks.half])
+    }
+  }
+
+  constructor(readonly _f: Array<number>, readonly loop = true) {
+
+    this._e = arr_flatMap2(_f, (f, n) => {
+      return [...Array(n).keys()].map(_ => [f, _])
+    })
+
+    this._th = tween([...this._e.keys(), this._e.length], [ticks.five])
+  }
+}
+
 
 
 class Cinema extends WithPlays {
@@ -445,17 +490,33 @@ const user_update = (_p: PlayerFloor, dt: number, dt0: number) => {
 
   let f = _p.i.just_ons.find(_ => _ === 'f')
 
+
   if (f) {
-    _p._floor_y.force = 1
+    _p._a = new AnimState(_f_jump, false)
   }
 
-  if (left) {
-    _p._floor_x.force = -1
-  }
   if (right) {
-    _p._floor_x.force = 1
+    if (_p._a._f === _f_turn) {
+    } else if (_p._facing === -1) {
+      _p._a = new AnimState(_f_turn, false)
+    } else if (_p._a._f === _f_walk) {
+    } else {
+      _p._a = new AnimState(_f_walk, false)
+    }
+  } else if (left) {
+    if (_p._a._f === _f_turn) {
+    } else if (_p._facing === 1) {
+      _p._a = new AnimState(_f_turn, false)
+    } else if (_p._a._f === _f_walk) {
+    } else {
+      _p._a = new AnimState(_f_walk, false)
+    }
+  } else {
+    if (_p._a._f === _f_walk) {
+      //_p.__x += _p._a.res[6] * 12
+      _p._a = new AnimState(_f_idle)
+    }
   }
-
 }
 
 export default class AllPlays extends PlayMakes {

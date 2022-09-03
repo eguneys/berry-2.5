@@ -1,5 +1,5 @@
-export const w = 320
-export const h = 180
+export const w = 480 
+export const h = 300
 
 const rate = 1000 / 60
 export const ticks = {
