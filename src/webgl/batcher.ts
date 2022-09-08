@@ -37,10 +37,10 @@ export class Batcher {
     .rotateZ(rz)
     let res = Mat4.identity
     .translate(Vec3.make(x, y, z))
-    .translate(Vec3.make(1/2, 1/2, 0))
+    //.translate(Vec3.make(1/2, 1/2, 0))
     .rotate(_q)
     .scale(Vec3.make(w, h, 1))
-    .translate(Vec3.make(-1/2, -1/2, 0))
+    //.translate(Vec3.make(-1/2, -1/2, 0))
     let quad = Quad.make(tw, th, sx, sy, sw, sh)
     this._els.push([0, res, color, quad, -1, th])
   }

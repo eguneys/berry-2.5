@@ -413,8 +413,6 @@ class PlayerFloor extends WithPlays {
       h = 60
 
 
-    this.g.texture(0x000000, 0, 0, 0, x, -y - h/2, -100, w, h, 0, 0, 48, 48, 512, 512)
-    this.g.texture(0x100000, Math.PI*0.5, 0, 0, x, -y - 1, -100, w * 2, h, 0, 0, 48, 48, 512, 510)
 
   }
 }
@@ -429,14 +427,8 @@ class Cinema extends WithPlays {
 
   _update(dt: number, dt0: number) {
 
-    if (!this._user || !this._user.alive) {
-      this._user = this.plays.tag(PlayerFloor, 'user')
-    }
-
-    if (this._user) {
-      this.c.o.x = this._user.x
-      this.c.l.x = this.c.o.x
-    }
+    this.c.o.y = 0
+    this.c.o.z = -300
   }
 }
 
@@ -484,40 +476,19 @@ export default class AllPlays extends PlayMakes {
       tag: 'user',
       v_pos: Vec2.zero
     })
-
-    this.make(PlayerFloor, {
-      tag: 'ai',
-      v_pos: Vec2.make(100, 0)
-    })
   }
 
   _update(dt: number, dt0: number) {
-    //this.c.o.y = 80 - Math.sin(this.life * 0.0001) * 80
-    //this.c.l.y = 80 - Math.sin(this.life * 0.0001) * 80
     this.objects.forEach(_ => _.update(dt, dt0))
   }
   _draw() {
 
-    let x = -1920 + 100,
-      y = -1080 + 100,
-      z = 0
 
-    this.g.texture(0xffffff, 0, 0, Math.sin(this.life*0.001) * Math.PI * 2, -x, y, -z, 1920, 1080, 0, 0, 100, 100, 100, 100)
+    let a_pi = Math.abs(Math.sin(this.life * 0.001)) * Math.PI * 0.5
+    this.g.texture(0x0000ff, 0, 0, 0, 0, 100, 0, 320, 320, 0, 0, 16, 16, 512, 512)
+    //this.g.texture(0x0000ff, 0, a_pi, 0, 0, 0, 0, 320, 320, 0, 0, 16, 16, 512, 512)
+    //this.g.texture(0x0000ff, 0, 0, a_pi, 0, 100, 0, 320, 320, 0, 0, 16, 16, 512, 512)
 
-    this.g.texture(0xffffff, 0, 0, Math.sin(this.life * 0.0001) * Math.PI * 2, -100, 0, -50, 500, 20, 0, 0, 100, 100, 100, 100)
-    this.g.texture(0x00ffff, 0, 0, 0, 0, 0, 0, -20, 500, 0, 0, 100, 100, 100, 100)
-    this.g.texture(0xffff00, 0, 0, 0, 100, 0, -100, 20, 500, 0, 0, 100, 100, 100, 100)
-    this.g.texture(0x0000ff, 0, 0, 0, -20, 0, 190, 20, 500, 0, 0, 100, 100, 100, 100)
-    this.g.texture(0xff00ff, 0, 0, 0, 0, 0, -199, 200, 100, 0, 0, 100, 100, 100, 100)
-
-
-    this.g.texture(0xffff00, Math.PI*0.5, 0, 0, 0, 0, 0, 1200, 200, 0, 0, 100, 100, 100, 100)
-    this.g.texture(0xfffff0, Math.PI*0.5, 0, 0, 0, 0, -200, 1200, 200, 0, 0, 100, 100, 100, 100)
-
-    /*
-    this.g.texture(0xff0000, 0, 0, 0, 0, 20, -100, 20, 50, 0, 0, 100, 100, 100, 100)
-    this.g.texture(0x000033, Math.PI*0.5, 0, 0, 0, 1, -100, 50, 50, 0, 0, 100, 100, 100, 100)
-   */
 
     this.objects.forEach(_ => _.draw())
   }

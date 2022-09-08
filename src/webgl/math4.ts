@@ -5,8 +5,8 @@ export class Billboard {
                  w: number, h: number) => new Billboard([
     Vec3.make(x, y, z),
     Vec3.make(x + w, y, z),
-    Vec3.make(x + w, y + h, z),
-    Vec3.make(x, y + h, z)
+    Vec3.make(x + w, y - h, z),
+    Vec3.make(x, y - h, z)
   ])
 
   static get unit() { return Billboard.make(0, 0, 0, 1, 1) }

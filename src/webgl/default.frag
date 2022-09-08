@@ -14,8 +14,7 @@ void main() {
   //col.a = 0.0;
   //col = vec4(1.0);
   //col.rgb *= vTint;
-  //col.r = p.x;
-  col.a = vVertexCoord.z / 200.0;
+  //col.a = vVertexCoord.z / 200.0;
   outColor = vec4(col.rgb * col.a, col.a);
 }
 
