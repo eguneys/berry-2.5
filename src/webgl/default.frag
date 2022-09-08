@@ -10,11 +10,19 @@ uniform sampler2D uSampler;
 
 void main() {
   vec2 p = vTextureCoord;
-  vec4 col = texture(uSampler, vTextureCoord);
-  //col.a = 0.0;
-  //col = vec4(1.0);
-  //col.rgb *= vTint;
-  //col.a = vVertexCoord.z / 200.0;
+  vec4 shade = texture(uSampler, vTextureCoord);
+  vec4 col = vec4(vTint, shade.a);
+
+  vec3 lightDir = vec3(0.1, 0.1, 0.2);
+  vec3 viewDir = vec3(0.5, 0.5, 0.8);
+  vec3 reflectDir = reflect(-lightDir, shade.rgb);
+
+  float spec = pow(max(dot(viewDir, reflectDir), 0.0), 24.0);
+  float light = max(0.0, dot(shade.rgb, lightDir));
+
+  col *= light + spec;
+
+
   outColor = vec4(col.rgb * col.a, col.a);
 }
 

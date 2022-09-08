@@ -48,7 +48,7 @@ export class Graphics {
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
     gl.enable(gl.DEPTH_TEST)
-   // gl.enable(gl.CULL_FACE)
+    gl.enable(gl.CULL_FACE)
   }
 
   glProgram = (vSource: string, fSource: string, nb: number) => {

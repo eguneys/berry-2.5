@@ -69,6 +69,8 @@ export class Batcher {
       let { vertexData, indices } = el
       let { fsUv } = quad
       let tintData = color_rgb(color)
+      //console.log(vertexData, fsUv, indices)
+      //throw 3
 
       for (let k = 0; k < vertexData.length; k+= 3) {
         _attributeBuffer[aIndex++] = vertexData[k]

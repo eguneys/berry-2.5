@@ -3,10 +3,10 @@ export class Billboard {
 
   static make = (x: number, y: number, z: number,
                  w: number, h: number) => new Billboard([
-    Vec3.make(x, y, z),
-    Vec3.make(x + w, y, z),
+    Vec3.make(x, y - h, z),
     Vec3.make(x + w, y - h, z),
-    Vec3.make(x, y - h, z)
+    Vec3.make(x + w, y, z),
+    Vec3.make(x, y, z),
   ])
 
   static get unit() { return Billboard.make(0, 0, 0, 1, 1) }
@@ -17,7 +17,7 @@ export class Billboard {
   }
 
   get indices(): Uint16Array {
-    return new Uint16Array([0, 1, 2, 0, 2, 3])
+    return new Uint16Array([1, 0, 3, 1, 3, 2])
   }
 
 
