@@ -153,9 +153,12 @@ export class Graphics {
     gl.uniformMatrix4fv(uniformData['u_matrix'].location, false, this.u_matrix.out)
   }
 
-  glUniformUpdate(uniformData, uniform) {
-    //let { gl } = this
-    //gl.uniformVec3fv(uniformData['tint'].location, false, color_rgb(tint))
+  glUniformUpdate(uniformData, u_blend) {
+    let { gl } = this
+    gl.uniform1f(uniformData['u_blend'].location, u_blend[0]);
+    gl.uniform1f(uniformData['u_mix'].location, u_blend[1]);
+    gl.uniform1f(uniformData['u_hmix'].location, u_blend[2]);
+    gl.uniform1f(uniformData['u_hhmix'].location, u_blend[3]);
   }
 
   glAttribUpdate(buffer, srcData) {

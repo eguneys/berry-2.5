@@ -10,6 +10,12 @@ uniform sampler2D uSampler;
 uniform sampler2D uSampler2;
 
 
+uniform float u_blend;
+uniform float u_mix;
+uniform float u_hmix;
+uniform float u_hhmix;
+
+
 void main() {
 
   vec2 p = vTextureCoord;
@@ -20,7 +26,7 @@ void main() {
   vec4 col = vec4(0.0, 0.0, 0.0, shade.a);
 
 
-  vec2 off1 = vec2(-1.0) / vec2(512);
+  //vec2 off1 = vec2(-1.0) / vec2(512);
 
   //shade *= 1.1;
   //shade += texture(uSampler, vTextureCoord) * 0.01;
@@ -29,10 +35,20 @@ void main() {
 
 
 
-  float blend = 1.0;
-  float _mix = 1.5;
-  float _hmix = _mix * 0.8;
-  float _hhmix = _hmix * 0.8;
+/*
+  float blend = 0.1;
+  float _mix = 2.5;
+  float _hmix = _mix * 0.5;
+  float _hhmix = _hmix * 0.5;
+
+*/
+
+  float blend = u_blend;
+  float _mix = u_mix;
+  float _hmix = _mix * u_hmix;
+  float _hhmix = _hmix * u_hhmix;
+
+
 
   if (shade.r > blend) {
     col.r = (_hmix - (_hmix - shade2.r) * (_hmix - _mix * (shade.r - _hhmix)));
@@ -54,7 +70,6 @@ void main() {
     col.b = shade2.b * (_mix * shade.b) ;
   }
 
-
-  outColor = shade;
+  outColor =col;
  
 }

@@ -85,12 +85,15 @@ export class Batcher {
   }
 
 
+  u_blend = [0.1, 2.5, 0.5, 0.5]
 
 
   render() {
 
     let { g } = this
     let { _indexBuffer, _attributeBuffer } = this
+
+    let { u_blend } = this
 
     g.glClear()
 
@@ -139,6 +142,7 @@ export class Batcher {
 
         g.glAttribUpdate(attributeBuffer, _attributeBuffer)
         g.glIndexUpdate(indexBuffer, _indexBuffer)
+        g.glUniformUpdate(uniformData, u_blend)
 
         g.glDraw(iIndex, vao)
         aIndex = 0

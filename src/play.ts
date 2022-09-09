@@ -431,6 +431,19 @@ class Cinema extends WithPlays {
     a = -500
     this.c.o.y = 0
     this.c.o.z = a
+
+
+    let d = 0.3;
+    let rate = 1
+    let i = Math.abs(Math.sin(this.life * 0.0001 * rate)) * d
+    let i2 = Math.abs(Math.sin(this.life * 0.0002 * rate)) * d
+    let i3 = Math.abs(Math.sin(this.life * 0.0004 * rate)) * d
+    this.g.u_blend = [0.13 + i * 0.05, 2.24 + i3*0.1, 0.54 + i3*0.1, 0.55 + i2*0.1]
+    /*
+    if (this.on_interval(ticks.half)) {
+      console.log(this.g.u_blend)
+    }
+    */
   }
 }
 
