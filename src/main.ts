@@ -50,7 +50,7 @@ export default function app(element: HTMLElement) {
 
 
 function start(element: HTMLElement, image: HTMLImageElement) {
-  let c = new Camera(Vec3.make(0, -200, 200), Vec3.zero)
+  let c = new Camera(Vec3.zero, Vec3.zero)
   let canvas = new Canvas(element, w, h)
   let graphics = new Graphics(canvas, c)
   let g = new Batcher(graphics)

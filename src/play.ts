@@ -427,8 +427,10 @@ class Cinema extends WithPlays {
 
   _update(dt: number, dt0: number) {
 
+    let a = -500 + Math.sin(this.life * 0.001) * 500
+    a = -500
     this.c.o.y = 0
-    this.c.o.z = -300
+    this.c.o.z = a
   }
 }
 
@@ -484,18 +486,17 @@ export default class AllPlays extends PlayMakes {
   _draw() {
 
     let a_pi = Math.abs(Math.sin(this.life * 0.001)) * Math.PI * 0.5
-    a_pi = 0
-    //this.g.texture(0x0000ff, a_pi, 0, 0, 0, 100, 0, 320, 320, 0, 0, 16, 16, 512, 512)
-    //this.g.texture(0x0000ff, 0, a_pi, 0, 0, 0, 0, 320, 320, 0, 0, 16, 16, 512, 512)
-    //this.g.texture(0x0000ff, 0, 0, a_pi, 0, 100, 0, 320, 320, 0, 0, 16, 16, 512, 512)
+    this.g.texture(0x0000ff, a_pi, 0, 0,    100, 100, 0,  320, 320, 0, 0, 16, 16, 512, 512)
+    this.g.texture(0x00ffff, 0, a_pi, 0,       0,-400, 0,  320, 320, 0, 0, 16, 16, 512, 512)
+    this.g.texture(0xff00ff, 0, 0, a_pi,       0,   0, 0,  320, 320, 0, 0, 16, 16, 512, 512)
 
 
 
     //this.g.texture(0x0000ff, -Math.PI*0.25, 0, 0, -524, 150, 0, 1048, 1048, 0, 0, 16, 16, 512, 512)
     //this.g.texture(0xff0000, -Math.PI*0.25, 0, 0, -524, 250, 0, 1048, 100, 0, 0, 16, 16, 512, 512)
 
-    let i = Math.sin(this.life * 0.001)
-    this.g.texture(0xff0000, 0, 0, 0, -80 + i * 100, 80 + i * 40, -180, 160, 160, 0, 40, 160, 160, 320, 180)
+    //let i = Math.sin(this.life * 0.001)
+    //this.g.texture(0xff0000, 0, 0, a_pi, -80 + i * 100, 80 + i * 40, -180, 160, 160, 0, 40, 160, 160, 320, 180)
 
     this.objects.forEach(_ => _.draw())
   }

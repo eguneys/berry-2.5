@@ -7,6 +7,40 @@ import { Quad } from './quad'
 
 const m_template = Matrix.identity.scale(640, 360)
 
+
+const arr_equal = (a, b) => a.find((_, i) => _ !== b[i])
+const log_err = err => {  if (err !== undefined) { console.log(`fail ${err}`) } }
+
+let b = Billboard.unit
+log_err(arr_equal(b.vertices[0].vs, [0, -1, 0]))
+log_err(arr_equal(b.vertices[1].vs, [1, -1, 0]))
+log_err(arr_equal(b.vertices[2].vs, [1, 0, 0]))
+log_err(arr_equal(b.vertices[3].vs, [0, 0, 0]))
+
+b = Billboard.unit.transform(Mat4.identity)
+log_err(arr_equal(b.vertices[0].vs, [0, -1, 0]))
+log_err(arr_equal(b.vertices[1].vs, [1, -1, 0]))
+log_err(arr_equal(b.vertices[2].vs, [1, 0, 0]))
+log_err(arr_equal(b.vertices[3].vs, [0, 0, 0]))
+
+
+b = Billboard.unit.transform(Mat4.identity.translate(Vec3.make(-1/2, 1/2, 0)))
+log_err(arr_equal(b.vertices[0].vs, [-0.5, -0.5, 0]))
+log_err(arr_equal(b.vertices[1].vs, [0.5, -0.5, 0]))
+log_err(arr_equal(b.vertices[2].vs, [0.5, 0.5, 0]))
+log_err(arr_equal(b.vertices[3].vs, [-0.5, 0.5, 0]))
+
+
+b = Billboard.unit.transform(Mat4.identity
+                             .scale(Vec3.make(10, 20, 0))
+                             .translate(Vec3.make(-1/2, 1/2, 0))
+                            )
+console.log(b)
+log_err(arr_equal(b.vertices[0].vs, [-0.5, -0.5, 0]))
+log_err(arr_equal(b.vertices[1].vs, [0.5, -0.5, 0]))
+log_err(arr_equal(b.vertices[2].vs, [0.5, 0.5, 0]))
+log_err(arr_equal(b.vertices[3].vs, [-0.5, 0.5, 0]))
+
 export class Batcher {
 
   nb = 24000
@@ -37,10 +71,10 @@ export class Batcher {
     .rotateZ(rz)
     let res = Mat4.identity
     .translate(Vec3.make(x, y, z))
-    //.translate(Vec3.make(1/2, 1/2, 0))
+    .scale(Vec3.make(w, h, 0))
     .rotate(_q)
-    .scale(Vec3.make(w, h, 1))
-    //.translate(Vec3.make(-1/2, -1/2, 0))
+    .translate(Vec3.make(-1/2, 1/2, 0))
+    //.translate(Vec3.make(1/2, -1/2, 0))
     let quad = Quad.make(tw, th, sx, sy, sw, sh)
     this._els.push([0, res, color, quad, -1, th])
   }
@@ -69,9 +103,6 @@ export class Batcher {
       let { vertexData, indices } = el
       let { fsUv } = quad
       let tintData = color_rgb(color)
-      //console.log(vertexData, fsUv, indices)
-      //throw 3
-
       for (let k = 0; k < vertexData.length; k+= 3) {
         _attributeBuffer[aIndex++] = vertexData[k]
         _attributeBuffer[aIndex++] = vertexData[k+1]
