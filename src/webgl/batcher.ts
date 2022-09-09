@@ -1,5 +1,5 @@
 import vSource from './default.vert'
-import fSource from './default.frag'
+import fSource from './skullgirls.frag'
 import { color_rgb } from './util'
 import { Rectangle, Matrix } from '../vec2'
 import { Quat, Vec3, Mat4, Billboard } from './math4'
@@ -8,6 +8,8 @@ import { Quad } from './quad'
 const m_template = Matrix.identity.scale(640, 360)
 
 
+/* math4 tests */
+/*
 const arr_equal = (a, b) => a.find((_, i) => _ !== b[i])
 const log_err = err => {  if (err !== undefined) { console.log(`fail ${err}`) } }
 
@@ -35,11 +37,11 @@ b = Billboard.unit.transform(Mat4.identity
                              .scale(Vec3.make(10, 20, 0))
                              .translate(Vec3.make(-1/2, 1/2, 0))
                             )
-console.log(b)
 log_err(arr_equal(b.vertices[0].vs, [-0.5, -0.5, 0]))
 log_err(arr_equal(b.vertices[1].vs, [0.5, -0.5, 0]))
 log_err(arr_equal(b.vertices[2].vs, [0.5, 0.5, 0]))
 log_err(arr_equal(b.vertices[3].vs, [-0.5, 0.5, 0]))
+*/
 
 export class Batcher {
 
@@ -50,7 +52,7 @@ export class Batcher {
 
   constructor(readonly g: Graphics) {}
 
-  init(bg, image) {
+  init(bg, images) {
     let { g, nb } = this
     this._def = g.glProgram(vSource, fSource, nb)
     //this._def2 = g.glProgram(vSource, fSource2, nb)
@@ -59,8 +61,11 @@ export class Batcher {
       color: bg
     })
 
-    let { glTexture } = g.glTexture()
-    g.glUseTexture(glTexture, image)
+    let { glTexture } = g.glTexture(0)
+    g.glUseTexture(glTexture, images[0], 0)
+
+    let { glTexture: glTexture2 } = g.glTexture(1)
+    g.glUseTexture(glTexture2, images[1], 1)
   }
 
 

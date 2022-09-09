@@ -58,7 +58,6 @@ export class Graphics {
     let { program, uniformData, attributeData } = 
       generateProgram(gl, vSource, fSource)
 
-    //gl.uniform1i(uniformData['uSampler'].location, 0)
 
     let vao = gl.createVertexArray()
     gl.bindVertexArray(vao)
@@ -104,11 +103,12 @@ export class Graphics {
     }
   }
 
-  glTexture() {
+  glTexture(n: number) {
 
     let { gl } = this
     let glTexture = gl.createTexture() 
 
+    gl.activeTexture(gl.TEXTURE0 + n)
     gl.bindTexture(gl.TEXTURE_2D, glTexture)
 
     gl.texImage2D(gl.TEXTURE_2D, 0,
@@ -130,8 +130,11 @@ export class Graphics {
     return { glTexture }
   }
 
-  glUseTexture(glTexture, texture) {
+  glUseTexture(glTexture, texture, n) {
     let { gl } = this
+    
+
+   gl.activeTexture(gl.TEXTURE0 + n)
    gl.bindTexture(gl.TEXTURE_2D, glTexture)
    gl.texImage2D(gl.TEXTURE_2D, 0,
      gl.RGBA, texture.width, texture.height, 0, gl.RGBA, gl.UNSIGNED_BYTE,
@@ -144,6 +147,8 @@ export class Graphics {
     gl.useProgram(program)
 
 
+    gl.uniform1i(uniformData['uSampler'].location, 0)
+    gl.uniform1i(uniformData['uSampler2'].location, 1)
     //gl.uniformMatrix3fv(uniformData['projectionMatrix'].location, false, this.projectionMatrix.array_t)
     gl.uniformMatrix4fv(uniformData['u_matrix'].location, false, this.u_matrix.out)
   }

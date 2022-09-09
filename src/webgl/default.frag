@@ -13,8 +13,9 @@ void main() {
   vec4 shade = texture(uSampler, vTextureCoord);
   vec4 col = vec4(vTint, shade.a);
 
-  vec3 lightDir = vec3(0.2, 0.2, 0.2);
-  vec3 viewDir = vec3(0.25, 0.25, 0.7);
+  shade = normalize(shade);
+  vec3 lightDir = normalize(vec3(100, 10, 100));
+  vec3 viewDir = normalize(vec3(1, 2, 3));
   vec3 reflectDir = reflect(-lightDir, shade.rgb);
 
   float spec = pow(max(dot(viewDir, reflectDir), 0.0), 8.0);
@@ -23,7 +24,7 @@ void main() {
   vec3 diffuse = vec3(light);
   vec3 specular = vec3(1.0) * spec;
 
-  col = vec4((col.rgb + diffuse + specular), col.a);
+  col = vec4((col.rgb + diffuse), col.a);
 
   outColor = vec4(col.rgb * col.a, col.a);
 }
