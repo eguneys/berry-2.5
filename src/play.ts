@@ -73,6 +73,12 @@ function arr_scale(arr: Array<A>, n: number) {
 }
 
 
+export const pi = Math.PI;
+export const half_pi = pi / 2;
+export const third_pi = pi / 3;
+export const tau = pi * 2;
+export const thirdtau = tau/ 3;
+
 const slow_burst = (radius: number, rng: RNG = random) => 
 tween([0.1, 0.1, 0.5, 1].map(_ => _ * radius), arr_shuffle([ticks.five + ticks.three, ticks.three * 2, ticks.five * 2, ticks.five, ticks.three * 2], rng))
 
@@ -506,16 +512,19 @@ export default class AllPlays extends PlayMakes {
    */
 
 
-    let i = Math.sin(this.life * 0.001)
+    this.g.texture(0x0000ff, half_pi * 0.8, 0, 0, 0, 200, 0, 1920, 300, 0, 0, 40, 40, 512, 512)
+    this.g.texture(0x0000ff, half_pi * 0.9, 0, 0, 0, 300, 0, 1920, 800, 0, 0, 40, 40, 512, 512)
+    this.g.texture(0xff0000, half_pi*0.2, 0, 0, 0, -100, 0, 1920, 540, 0, 0, 40, 40, 512, 512)
+
+
+  let i = Math.sin(this.life * 0.001)
     this.g.texture(0xff0000, 0, 0, 0, 
-                   i*100, 0, 0, 
-                   278*2, 500*2, 0, 0, 278, 500, 512, 512)
+                   i*100, 40, -10, 
+                   278*1, 500*1, 0, 0, 278, 500, 512, 512)
 
 
 
-    //this.g.texture(0x0000ff, 0, 0, 0, 0, 0, 0, 400, 400, 0, 0, 16, 16, 512, 512)
-
-
+  
     this.objects.forEach(_ => _.draw())
   }
 }

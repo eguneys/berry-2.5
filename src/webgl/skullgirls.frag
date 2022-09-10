@@ -23,6 +23,7 @@ void main() {
   vec4 shade = texture(uSampler, vTextureCoord);
   vec4 shade2 = texture(uSampler2, vTextureCoord);
 
+
   vec4 col = vec4(0.0, 0.0, 0.0, shade.a);
 
 
@@ -69,6 +70,8 @@ void main() {
   } else {
     col.b = shade2.b * (_mix * shade.b) ;
   }
+
+  col.rgb *= col.a;
 
   outColor =col;
  
