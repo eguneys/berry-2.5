@@ -517,11 +517,15 @@ export default class AllPlays extends PlayMakes {
     this.g.texture(0xff0000, half_pi*0.2, 0, 0, 0, -100, 0, 1920, 540, 0, 0, 40, 40, 512, 512)
 
 
-  let i = Math.sin(this.life * 0.001)
-    this.g.texture(0xff0000, 0, 0, 0, 
-                   i*100, 40, -10, 
-                   278*1, 500*1, 0, 0, 278, 500, 512, 512)
+  this.g.texture(0xff0000, 0, 0, 0, 
+                 300, 40, -10, 
+                 -278*1, 500*1, 0, 0, 278, 500, 512, 512)
 
+
+  let i = Math.sin(this.life * 0.001)
+  this.g.texture(0xff0000, 0, 0, 0, 
+                 -300, 40, -12, 
+                 278*1, 500*1, 0, 0, 278, 500, 512, 512)
 
 
   
