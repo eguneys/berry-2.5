@@ -517,6 +517,7 @@ export default class AllPlays extends PlayMakes {
     this.g.texture(0xff0000, half_pi*0.2, 0, 0, 0, -100, 0, 1920, 540, 0, 0, 40, 40, 512, 512)
 
 
+    /*
   this.g.texture(0xff0000, 0, 0, 0, 
                  300, 40, -10, 
                  -278*1, 500*1, 0, 0, 278, 500, 512, 512)
@@ -527,8 +528,16 @@ export default class AllPlays extends PlayMakes {
                  -300, 40, -12, 
                  278*1, 500*1, 0, 0, 278, 500, 512, 512)
 
+                */
 
   
+    let i = Math.abs(Math.cos(this.life * 0.001)) * 5
+    this.g.texture(0xff0000, 0, 0, 0, 
+                   300, 40, -10, 
+                   256, 400*1, 160 * Math.floor(i), 0, 160, 200, 1024, 1024)
+
+
+
     this.objects.forEach(_ => _.draw())
   }
 }
