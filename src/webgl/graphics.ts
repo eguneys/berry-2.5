@@ -147,14 +147,19 @@ export class Graphics {
     gl.useProgram(program)
 
 
-    gl.uniform1i(uniformData['uSampler'].location, 0)
-    gl.uniform1i(uniformData['uSampler2'].location, 1)
+    if (uniformData['uSampler']) {
+      gl.uniform1i(uniformData['uSampler'].location, 0)
+      gl.uniform1i(uniformData['uSampler2'].location, 1)
+    } else {
+      gl.uniform1i(uniformData['uSampler3'].location, 2)
+    }
     //gl.uniformMatrix3fv(uniformData['projectionMatrix'].location, false, this.projectionMatrix.array_t)
     gl.uniformMatrix4fv(uniformData['u_matrix'].location, false, this.u_matrix.out)
   }
 
   glUniformUpdate(uniformData, u_blend) {
     let { gl } = this
+    if (!uniformData['u_blend']) { return } 
     gl.uniform1f(uniformData['u_blend'].location, u_blend[0]);
     gl.uniform1f(uniformData['u_mix'].location, u_blend[1]);
     gl.uniform1f(uniformData['u_hmix'].location, u_blend[2]);

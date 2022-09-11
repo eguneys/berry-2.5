@@ -7,6 +7,8 @@ import { Input } from './input'
 import { Canvas, Graphics, Batcher } from './webgl'
 import sprites_png from '../assets/sprites.png'
 import sprites2_png from '../assets/sprites2.png'
+import shadings_png from '../assets/shadings.png'
+import colors_png from '../assets/colors.png'
 import Camera from './camera'
 
 function load_image(path: string): Promise<HTMLImageElement> {
@@ -46,8 +48,10 @@ function loop(fn: (dt: number, dt0: number) => void) {
 }
 
 export default function app(element: HTMLElement) {
-  Promise.all([load_image(sprites_png),
-              load_image(sprites2_png)]).then(images => start(element, images))
+  Promise.all([
+    load_image(shadings_png),
+    load_image(colors_png),
+    load_image(sprites_png)]).then(images => start(element, images))
 }
 
 

@@ -433,10 +433,11 @@ class Cinema extends WithPlays {
 
   _update(dt: number, dt0: number) {
 
-    let a = -500 + Math.sin(this.life * 0.001) * 500
-    a = -500
-    this.c.o.y = 0
-    this.c.o.z = a
+    let a = Math.sin(this.life * 0.001) * 500
+    //a = -500
+    this.c.o.z = -100
+    this.c.o.y = a
+    this.c.o.x = a * 0.5
 
 
     let d = 0.3;
@@ -512,10 +513,20 @@ export default class AllPlays extends PlayMakes {
    */
 
 
+    /*
     this.g.texture(0x0000ff, half_pi * 0.8, 0, 0, 0, 200, 0, 1920, 300, 0, 0, 40, 40, 512, 512)
     this.g.texture(0x0000ff, half_pi * 0.9, 0, 0, 0, 300, 0, 1920, 800, 0, 0, 40, 40, 512, 512)
     this.g.texture(0xff0000, half_pi*0.2, 0, 0, 0, -100, 0, 1920, 540, 0, 0, 40, 40, 512, 512)
+     */
 
+
+
+    //this.g.texture(0xcccccc, 0, a_pi, 0, 0, 0, 0, 112 * 10, 32 * 50, 0, 0, 112, 32, 1024, 1024)
+    //this.g.texture(0xcccccc, half_pi * 1.2, 0, 0, 0, 0, 50, 112 * 10, 32 * 50, 0, 0, 112, 32, 1024, 1024)
+
+    //this.g.texture(0xcccccc, 0, 0, 0, 0, 0, 0, 200, 4, 0, 0, 10, 10, 1024, 1024)
+    //this.g.texture(0xcccccc, 0, 0, 0, 0, 0, 0, 4, 200, 0, 0, 10, 10, 1024, 1024)
+    this.g.texture(0xcccccc, 0, half_pi, 0, 0, 0, 0, 200, 4, 0, 0, 10, 10, 1024, 1024)
 
     /*
   this.g.texture(0xff0000, 0, 0, 0, 
@@ -535,7 +546,6 @@ export default class AllPlays extends PlayMakes {
     this.g.texture(0xff0000, 0, 0, 0, 
                    300, 40, -10, 
                    256, 400*1, 160 * Math.floor(i), 0, 160, 200, 1024, 1024)
-
 
 
     this.objects.forEach(_ => _.draw())

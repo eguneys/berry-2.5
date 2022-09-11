@@ -1,5 +1,6 @@
 import vSource from './default.vert'
 import fSource from './skullgirls.frag'
+import fSource2 from './default.frag'
 import { color_rgb } from './util'
 import { Rectangle, Matrix } from '../vec2'
 import { Quat, Vec3, Mat4, Billboard } from './math4'
@@ -55,7 +56,7 @@ export class Batcher {
   init(bg, images) {
     let { g, nb } = this
     this._def = g.glProgram(vSource, fSource, nb)
-    //this._def2 = g.glProgram(vSource, fSource2, nb)
+    this._def2 = g.glProgram(vSource, fSource2, nb)
 
     g.glOnce({
       color: bg
@@ -66,6 +67,9 @@ export class Batcher {
 
     let { glTexture: glTexture2 } = g.glTexture(1)
     g.glUseTexture(glTexture2, images[1], 1)
+
+    let { glTexture: glTexture3 } = g.glTexture(2)
+    g.glUseTexture(glTexture3, images[2], 2)
   }
 
 
@@ -81,7 +85,7 @@ export class Batcher {
     .translate(Vec3.make(-1/2, 1/2, 0))
     //.translate(Vec3.make(1/2, -1/2, 0))
     let quad = Quad.make(tw, th, sx, sy, sw, sh)
-    this._els.push([0, res, color, quad, -1, th])
+    this._els.push([color === 0xcccccc ? this._def2 : 0, res, color, quad, -1, th])
   }
 
 
