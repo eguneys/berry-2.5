@@ -11,25 +11,8 @@ export class Graphics {
   get width(): number { return this.canvas.width }
   get height(): number { return this.canvas.height }
 
-
-  get v_matrix() {
-    return this.c_matrix.inverse
-  }
-
-  get vp_matrix() {
-    return this.p_matrix.mul(this.v_matrix)
-  }
-
   get u_matrix() {
-    return this.vp_matrix
-  }
-
-  get p_matrix() {
-    return this.camera.p_matrix
-  }
-
-  get c_matrix() {
-    return this.camera.c_matrix
+    return this.camera.vp_matrix
   }
 
   constructor(readonly canvas: Canvas, readonly camera: Camera) {}

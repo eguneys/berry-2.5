@@ -44,6 +44,10 @@ log_err(arr_equal(b.vertices[2].vs, [0.5, 0.5, 0]))
 log_err(arr_equal(b.vertices[3].vs, [-0.5, 0.5, 0]))
 */
 
+
+
+
+
 export class Batcher {
 
   nb = 24000
@@ -80,10 +84,9 @@ export class Batcher {
     .rotateZ(rz)
     let res = Mat4.identity
     .translate(Vec3.make(x, y, z))
-    .scale(Vec3.make(w, h, 0))
     .rotate(_q)
+    .scale(Vec3.make(w, h, 0))
     .translate(Vec3.make(-1/2, 1/2, 0))
-    //.translate(Vec3.make(1/2, -1/2, 0))
     let quad = Quad.make(tw, th, sx, sy, sw, sh)
     this._els.push([color === 0xcccccc ? this._def2 : 0, res, color, quad, -1, th])
   }

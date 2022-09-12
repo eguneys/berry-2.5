@@ -434,10 +434,11 @@ class Cinema extends WithPlays {
   _update(dt: number, dt0: number) {
 
     let a = Math.sin(this.life * 0.001) * 500
-    //a = -500
-    this.c.o.z = -100
-    this.c.o.y = a
-    this.c.o.x = a * 0.5
+    this.c.o.z = 0
+    this.c.o.y = 0
+    this.c.o.x = 0
+
+    this.c.l.z = 500
 
 
     let d = 0.3;
@@ -505,7 +506,7 @@ export default class AllPlays extends PlayMakes {
   }
   _draw() {
 
-    let a_pi = Math.abs(Math.sin(this.life * 0.001)) * Math.PI * 0.5
+    let a_pi = Math.sin(this.life * 0.001) * Math.PI
     /*
     this.g.texture(0x0000ff, 0, 0, 0,    0, 0, 0,  320, 320, 0, 0, 16, 16, 512, 512)
     this.g.texture(0x00ffff, 0, a_pi, 0,       0,-400, 0,  320, 320, 0, 0, 16, 16, 512, 512)
@@ -522,12 +523,15 @@ export default class AllPlays extends PlayMakes {
 
 
     //this.g.texture(0xcccccc, 0, a_pi, 0, 0, 0, 0, 112 * 10, 32 * 50, 0, 0, 112, 32, 1024, 1024)
-    //this.g.texture(0xcccccc, half_pi * 1.2, 0, 0, 0, 0, 50, 112 * 10, 32 * 50, 0, 0, 112, 32, 1024, 1024)
+    //this.g.texture(0xcccccc, a_pi, 0, 0, 0, 0, 50, 112 * 10, 32 * 50, 0, 0, 112, 32, 1024, 1024)
 
-    //this.g.texture(0xcccccc, 0, 0, 0, 0, 0, 0, 200, 4, 0, 0, 10, 10, 1024, 1024)
-    //this.g.texture(0xcccccc, 0, 0, 0, 0, 0, 0, 4, 200, 0, 0, 10, 10, 1024, 1024)
-    this.g.texture(0xcccccc, 0, half_pi, 0, 0, 0, 0, 200, 4, 0, 0, 10, 10, 1024, 1024)
+    /*
+    this.g.texture(0xcccccc, 0, 0, 0, 0, 0, 0, 200, 4, 0, 0, 10, 10, 1024, 1024)
+    this.g.texture(0xcccccc, 0, 0, 0, 0, 0, 0, 4, 200, 0, 0, 10, 10, 1024, 1024)
+    this.g.texture(0xcccccc, 0, a_pi, 0, 0, -100, 0, 200, 60, 0, 0, 10, 10, 1024, 1024)
 
+    this.g.texture(0xcccccc, 0, 0, 0, 0, 0, -200, 200, 60, 0, 0, 10, 10, 1024, 1024)
+    */
     /*
   this.g.texture(0xff0000, 0, 0, 0, 
                  300, 40, -10, 
@@ -542,11 +546,17 @@ export default class AllPlays extends PlayMakes {
                 */
 
   
+
+    this.g.texture(0xcccccc, 0, a_pi, 0, 0, 0, 100, 200, 4, 0, 0, 10, 10, 1024, 1024)
+
+    /*
+
     let i = Math.abs(Math.cos(this.life * 0.001)) * 5
     this.g.texture(0xff0000, 0, 0, 0, 
                    300, 40, -10, 
                    256, 400*1, 160 * Math.floor(i), 0, 160, 200, 1024, 1024)
 
+*/
 
     this.objects.forEach(_ => _.draw())
   }
