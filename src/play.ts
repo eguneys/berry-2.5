@@ -224,6 +224,7 @@ abstract class WithPlays extends PlayMakes {
   constructor(readonly plays: AllPlays) {
     super(plays.ctx)
     this.on_dispose = []
+    this.z = 0
   }
 
   init() {
@@ -368,16 +369,18 @@ class PlayerFloor extends WithPlays {
     this._floor_y = make_rigid(0, {
       mass: 100,
       air_friction: 0.9,
-      max_speed: 100,
+      max_speed: 50,
       max_force: 10
     })
 
     this._floor_x = make_rigid(x, {
-      mass: 100,
-      air_friction: 0.9,
-      max_speed: 100,
+      mass: 300,
+      air_friction: 0.8,
+      max_speed: 38,
       max_force: 10
     })
+
+    this.z = this.data.z
   }
 
   _update(dt: number, dt0: number) {
@@ -385,8 +388,6 @@ class PlayerFloor extends WithPlays {
 
     this._floor_x.force = 0
     this._floor_y.force = 0
-
-    user_update(this)
 
     if (this._floor_y.x > 0 && this._floor_y.vx < 0.1) {
 
@@ -413,13 +414,17 @@ class PlayerFloor extends WithPlays {
 
   _draw() {
     
+    let { z } = this.data
     let { x, y } = this
 
     let w = 40,
       h = 60
 
 
-
+    let i = Math.abs(Math.cos(this.life * 0.001)) * 5
+    this.g.texture(0xff0000, 0, 0, 0, 
+                   x, y, -100 + z, 
+                   256, 400*1, 160 * Math.floor(i), 0, 160, 200, 1024, 1024)
   }
 }
 
@@ -453,11 +458,16 @@ class Cinema extends WithPlays {
   }
 }
 
+const ai_update = (_p: PlayerFloor, dt: number, dt0: number) => {
+
+
+}
 
 const user_update = (_p: PlayerFloor, dt: number, dt0: number) => {
   let left = _p.i.been_ons.find(_ => _[0] === 'ArrowLeft')?.[1],
     right = _p.i.been_ons.find(_ => _[0] === 'ArrowRight')?.[1]
 
+  let _l = _p.i.just_ons.find(_ => _ === 'ArrowLeft')
   let f = _p.i.just_ons.find(_ => _ === 'f')
 
   if (f) {
@@ -487,6 +497,12 @@ export default class AllPlays extends PlayMakes {
     return o.find(_ => _ instanceof Ctor && _.data.tag === tag)
   }
 
+
+  get z_objects() {
+    return this.objects.sort((a, b) => b.z - a.z)
+
+  }
+
   _init() {
 
     this.objects = []
@@ -495,7 +511,14 @@ export default class AllPlays extends PlayMakes {
     this.make(Cinema)
     this.make(PlayerFloor, {
       tag: 'user',
-      v_pos: Vec2.zero
+      v_pos: Vec2.make(-300, 0),
+      z: -1
+    })
+
+    this.make(PlayerFloor, {
+      tag: 'ai',
+      v_pos: Vec2.make(300, 0),
+      z: 0
     })
   }
 
@@ -532,17 +555,6 @@ export default class AllPlays extends PlayMakes {
     this.g.texture(0xcccccc, half_pi, 0, 0, 0, 200, -200, 1920, 400, 0, 0, 50, 50, 1024, 1024)
     this.g.texture(0xcccccc, 0, 0, 0, 0, 0, 200, 1920, 400, 0, 0, 50, 50, 1024, 1024)
 
-    let i = Math.abs(Math.cos(this.life * 0.001)) * 5
-    this.g.texture(0xff0000, 0, 0, 0, 
-                   300, 20, -100, 
-                   256, 400*1, 160 * Math.floor(i), 0, 160, 200, 1024, 1024)
-
-    this.g.texture(0xff0000, 
-                   0, 0, 0, 
-                   -300, 20, -100, 
-                   -256, 400*1, 160 * Math.floor(i), 0, 160, 200, 1024, 1024)
-
-
-    this.objects.forEach(_ => _.draw())
+    this.z_objects.forEach(_ => _.draw())
   }
 }
