@@ -7,6 +7,11 @@ import { arr_shuffle } from './util'
 import { appr, lerp } from './lerp'
 import { make_rigid, rigid_update } from './rigid'
 
+import { __f_walk, __f_idle, __f_turn } from './animstate'
+import { AnimState2 } from './animstate'
+
+console.log(__f_walk)
+
 
 const quick_burst = (radius: number, start: number = 0.8, end: number = 0.2) => 
 tween([start, start, 1, end].map(_ => _ * radius), [ticks.five + ticks.three, ticks.three * 2, ticks.three * 2])
@@ -353,12 +358,8 @@ class Trail extends WithPlays {
 
 class PlayerFloor extends WithPlays {
 
-  get x() {
+  get _x() {
     return this._floor_x.x
-  }
-
-  get y() {
-    return this._floor_y.x
   }
 
   _init() {
@@ -375,58 +376,64 @@ class PlayerFloor extends WithPlays {
 
     this._floor_x = make_rigid(x, {
       mass: 300,
-      air_friction: 0.8,
+      air_friction: 0.9,
       max_speed: 38,
       max_force: 10
     })
 
     this.z = this.data.z
+
+
+    this._a = new AnimState2(__f_idle)
+  }
+
+
+  _req_walk(dir: Direction) {
+    if (this._a._f === __f_idle) {
+      this._a = new AnimState2(__f_walk)
+    }
   }
 
   _update(dt: number, dt0: number) {
 
 
     this._floor_x.force = 0
-    this._floor_y.force = 0
 
-    if (this._floor_y.x > 0 && this._floor_y.vx < 0.1) {
+    user_update(this)
 
-      let m_s = this._floor_y.opts.max_speed,
-        m_f = this._floor_y.opts.max_force
-      let d = this._floor_y.x
+    let { res, res0 } = this._a
 
-      let r_s = m_s * (d / 100)
-      let c_s = Math.min(r_s, m_s)
-      let d_v = c_s
 
-      this._floor_y.force = -c_s / m_s * m_f
+    if (this._a._f === __f_walk) {
+      if (res && res0) {
+        if (res[0] !== res0[0]) {
+          this._floor_x.force = this._floor_x.opts.max_force
+        }
+      }
     }
+
+
+    this._a.update(dt, dt0)
+
 
     rigid_update(this._floor_x, dt, dt0)
-    rigid_update(this._floor_y, dt, dt0)
-
-    if (this._floor_y.x < 0) {
-      this._floor_y.x = 0
-      this._floor_y.x0 = 0
-    }
-
   }
 
   _draw() {
     
     let { z } = this.data
-    let { x, y } = this
+    let { _x } = this
+    let _y = 0
 
-    let w = 40,
-      h = 60
-
+    let [name, x, y, w, h] = this._a.res
 
     let i = Math.abs(Math.cos(this.life * 0.001)) * 5
     this.g.texture(0xff0000, 0, 0, 0, 
-                   x, y, -100 + z, 
-                   256, 400*1, 160 * Math.floor(i), 0, 160, 200, 1024, 1024)
+                   _x, _y, -100 + z, 
+                   w * 2, h * 2, x, y, w, h, 1024, 1024)
   }
 }
+
 
 
 class Cinema extends WithPlays {
@@ -463,22 +470,19 @@ const ai_update = (_p: PlayerFloor, dt: number, dt0: number) => {
 
 }
 
-const user_update = (_p: PlayerFloor, dt: number, dt0: number) => {
-  let left = _p.i.been_ons.find(_ => _[0] === 'ArrowLeft')?.[1],
-    right = _p.i.been_ons.find(_ => _[0] === 'ArrowRight')?.[1]
+const user_update = (_p: PlayerFloor) => {
 
-  let _l = _p.i.just_ons.find(_ => _ === 'ArrowLeft')
-  let f = _p.i.just_ons.find(_ => _ === 'f')
+  let left_been = _p.i.been_ons.find(_ => _[0] === 'ArrowLeft')?.[1],
+    right_been = _p.i.been_ons.find(_ => _[0] === 'ArrowRight')?.[1]
 
-  if (f) {
-    _p._floor_y.force = 1
-  }
+  let _left_just = _p.i.just_ons.find(_ => _ === 'ArrowLeft'),
+    _right_just = _p.i.just_ons.find(_ => _ === 'ArrowRight')
 
-  if (left) {
-    _p._floor_x.force = -1
-  }
-  if (right) {
-    _p._floor_x.force = 1
+
+  if (left_been || _left_just) {
+    _p._req_walk(-1)
+  } else if (right_been || _right_just) {
+    _p._req_walk(1)
   }
 
 }

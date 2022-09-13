@@ -49,5 +49,5 @@ let b = Billboard.unit
 
 let vs = b.vertices.map(_ => mt.mVec3(_))
 
-console.table(b.vertices)
-console.table(vs)
+//console.table(b.vertices)
+//console.table(vs)
