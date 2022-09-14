@@ -36,7 +36,11 @@ let _ff = [
   `i@0,0,160,200 5`,
   `w@0,200,160,200 4`,
   `bw@0,200,160,200 4`,
-  `tt@0,200,160,200 1`
+  `tt@0,200,160,200 1`,
+  `d@0,200,160,200 2`,
+  `bd@0,200,160,200 2`,
+  `att@0,400,192,120 3`,
+  `att2@0,520,192,120 2`,
 ]
 
 
@@ -46,6 +50,9 @@ export let __f_walk = `w@0.2 _l`
 export let __f_back_walk = `bw@0.2 _l`
 export let __f_idle = `i@0.2 _l`
 export let __f_turn = `tt@0.1 _`
+export let __f_dash = `d@0.2 _`
+export let __f_back_dash = `bd@0.2 _`
+export let __f_attack = `att@0.05 att2@0.16 _`
 
 
 

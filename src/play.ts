@@ -5,7 +5,7 @@ import { generate, psfx } from './audio'
 
 import { appr, lerp, lerp_dt } from './lerp'
 import { make_rigid, rigid_update } from './rigid'
-import { __f_back_walk, __f_walk, __f_idle, __f_turn } from './animstate'
+import { __f_attack, __f_back_dash, __f_dash, __f_back_walk, __f_walk, __f_idle, __f_turn } from './animstate'
 import { AnimState2 } from './animstate'
 
 console.log(__f_walk)
@@ -374,9 +374,9 @@ class PlayerFloor extends WithPlays {
 
     this._floor_x = make_rigid(x, {
       mass: 100,
-      air_friction: 0.8,
+      air_friction: 0.6,
       max_speed: 28,
-      max_force: 2
+      max_force: 4
     })
 
     this.z = this.data.z
@@ -386,7 +386,33 @@ class PlayerFloor extends WithPlays {
     this._a = new AnimState2(__f_idle)
   }
 
+  _attack() {
+    this._a = new AnimState2(__f_attack)
+  }
+
   _horizontal(on, off) {
+
+    if (off !== 0) {
+      this._t_off = this.life * off
+    }
+    if (on !== 0) {
+      let { _t_off } = this
+      this._t_off = undefined
+      if (!!_t_off && on === Math.sign(_t_off)) {
+        let d = this.life - Math.abs(_t_off)
+
+        if (d < ticks.sixth) {
+          if (Math.sign(_t_off) === this._facing) {
+            this._a = new AnimState2(__f_dash)
+          } else {
+            this._a = new AnimState2(__f_back_dash)
+          }
+          return
+        }
+
+      }
+    }
+
     if(this._a._f === __f_back_walk) {
       if (off === this._facing * -1) {
         this._a = new AnimState2(__f_idle)
@@ -419,8 +445,7 @@ class PlayerFloor extends WithPlays {
   _update(dt: number, dt0: number) {
 
 
-    this._floor_x.force = 
-      appr(this._floor_x.force, 0, (dt / (ticks.five * 2)) * this._floor_x.opts.max_force)
+    this._floor_x.force = 0
 
     if (this.data.tag === 'user') {
       user_update(this)
@@ -431,16 +456,46 @@ class PlayerFloor extends WithPlays {
 
     let { res, res0 } = this._a
 
+    if (this._a._f === __f_attack) {
+      if (res && res0) {
+        let { i } = this._a
+        if (res[0].match('att2')) {
+          this._floor_x.force = this._floor_x.opts.max_force * this._facing * 5 * (0.8 - i) * (0.8 - i)
+        }
+      }
+      if (!res) {
+        this._a = new AnimState2(__f_idle)
+      }
+    }
+    if (this._a._f === __f_dash) {
+      if (res && res0) {
+        let { i } = this._a
+        this._floor_x.force = this._floor_x.opts.max_force * this._facing * 2 * (1 - i * i * i)
+      }
+
+      if (!res) {
+        this._a = new AnimState2(__f_idle)
+      }
+    } else if (this._a._f === __f_back_dash) {
+      if (res && res0) {
+        let { i } = this._a
+        this._floor_x.force = this._floor_x.opts.max_force * -1 * this._facing * 1.4 * (1 - i * i)
+      }
+
+      if (!res) {
+        this._a = new AnimState2(__f_idle)
+      }
+    }
     if (this._a._f === __f_back_walk) {
       if (res && res0) {
         let { i } = this._a
-        this._floor_x.force = this._floor_x.opts.max_force * -1 * this._facing * 0.4 * (1 - i)
+        this._floor_x.force = this._floor_x.opts.max_force * -1 * this._facing * 0.6 * (1 - i)
       }
     }
     if (this._a._f === __f_walk) {
       if (res && res0) {
         let { i } = this._a
-        this._floor_x.force = this._floor_x.opts.max_force * this._facing * 0.8 * (1 - i)
+        this._floor_x.force = this._floor_x.opts.max_force * this._facing * (1 - i)
       }
     }
 
@@ -542,12 +597,14 @@ const user_update = (_p: PlayerFloor) => {
   let _left_off = _p.i.just_offs.find(_ => _ === 'ArrowLeft'),
     _right_off = _p.i.just_offs.find(_ => _ === 'ArrowRight')
 
+  let _f_on = _p.i.just_ons.find(_ => _ === 'f')
 
   let h_on = _left_on ? -1 : _right_on ? 1 : 0
   let h_off = _left_off ? -1 : _right_off ? 1 : 0
 
 
   _p._horizontal(h_on, h_off)
+  if (_f_on) { _p._attack() }
 }
 
 export default class AllPlays extends PlayMakes {
