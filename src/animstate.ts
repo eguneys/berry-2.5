@@ -1,5 +1,5 @@
 import { ticks } from './shared'
-import { tween, completed, update } from './anim'
+import { read, tween, completed, update } from './anim'
 
 const expand_ff = (_ff: Array<string>) => {
   let next_s, last_t
@@ -34,13 +34,16 @@ const expand_ff = (_ff: Array<string>) => {
 
 let _ff = [
   `i@0,0,160,200 5`,
-  `w@0,200,160,200 4`
+  `w@0,200,160,200 4`,
+  `bw@0,200,160,200 4`,
+  `tt@0,200,160,200 1`
 ]
 
 
 const _ff_expand = expand_ff(_ff)
 
 export let __f_walk = `w@0.2 _l`
+export let __f_back_walk = `bw@0.2 _l`
 export let __f_idle = `i@0.2 _l`
 export let __f_turn = `tt@0.1 _`
 
@@ -48,6 +51,9 @@ export let __f_turn = `tt@0.1 _`
 
 export class AnimState2 {
 
+  get i() {
+    return read(this.th)[0]
+  }
 
   get res() {
     return this.current_frame?.[1]
@@ -78,10 +84,10 @@ export class AnimState2 {
 
 
   update(dt: number, dt0: number) {
+    this.res0 = this.res
     if (!this.res) {
       return
     }
-    this.res0 = this.res
     update(this.th, dt, dt0)
     if (completed(this.th)) {
       this._th = undefined

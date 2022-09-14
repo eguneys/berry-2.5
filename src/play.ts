@@ -1,13 +1,11 @@
-import { w, h, colors, ticks } from './shared'
+import { ticks } from './shared'
 import { ti, completed, read, update, tween } from './anim'
 import { Line, Vec2, Rectangle, Circle } from './vec2'
 import { generate, psfx } from './audio'
-import { arr_shuffle } from './util'
 
-import { appr, lerp } from './lerp'
+import { appr, lerp, lerp_dt } from './lerp'
 import { make_rigid, rigid_update } from './rigid'
-
-import { __f_walk, __f_idle, __f_turn } from './animstate'
+import { __f_back_walk, __f_walk, __f_idle, __f_turn } from './animstate'
 import { AnimState2 } from './animstate'
 
 console.log(__f_walk)
@@ -375,48 +373,91 @@ class PlayerFloor extends WithPlays {
     })
 
     this._floor_x = make_rigid(x, {
-      mass: 300,
-      air_friction: 0.9,
-      max_speed: 38,
-      max_force: 10
+      mass: 100,
+      air_friction: 0.8,
+      max_speed: 28,
+      max_force: 2
     })
 
     this.z = this.data.z
 
+    this._facing = 1
 
     this._a = new AnimState2(__f_idle)
   }
 
+  _horizontal(on, off) {
+    if(this._a._f === __f_back_walk) {
+      if (off === this._facing * -1) {
+        this._a = new AnimState2(__f_idle)
+      }
+      if (this._facing === on) {
+        this._a = new AnimState2(__f_walk)
+      } else if (this._facing === -on) {
+        this._a = new AnimState2(__f_back_walk)
+      }
 
-  _req_walk(dir: Direction) {
-    if (this._a._f === __f_idle) {
-      this._a = new AnimState2(__f_walk)
+    } else if (this._a._f === __f_walk) {
+      if (off === this._facing) {
+        this._a = new AnimState2(__f_idle)
+      }
+      if (this._facing === on) {
+        this._a = new AnimState2(__f_walk)
+      } else if (this._facing === -on) {
+        this._a = new AnimState2(__f_back_walk)
+      }
+
+    } else if (this._a._f === __f_idle) {
+      if (this._facing === on) {
+        this._a = new AnimState2(__f_walk)
+      } else if (this._facing === -on) {
+        this._a = new AnimState2(__f_back_walk)
+      }
     }
   }
 
   _update(dt: number, dt0: number) {
 
 
-    this._floor_x.force = 0
+    this._floor_x.force = 
+      appr(this._floor_x.force, 0, (dt / (ticks.five * 2)) * this._floor_x.opts.max_force)
 
-    user_update(this)
-
-    let { res, res0 } = this._a
-
-
-    if (this._a._f === __f_walk) {
-      if (res && res0) {
-        if (res[0] !== res0[0]) {
-          this._floor_x.force = this._floor_x.opts.max_force
-        }
-      }
+    if (this.data.tag === 'user') {
+      user_update(this)
     }
-
 
     this._a.update(dt, dt0)
 
 
+    let { res, res0 } = this._a
+
+    if (this._a._f === __f_back_walk) {
+      if (res && res0) {
+        let { i } = this._a
+        this._floor_x.force = this._floor_x.opts.max_force * -1 * this._facing * 0.4 * (1 - i)
+      }
+    }
+    if (this._a._f === __f_walk) {
+      if (res && res0) {
+        let { i } = this._a
+        this._floor_x.force = this._floor_x.opts.max_force * this._facing * 0.8 * (1 - i)
+      }
+    }
+
+
+
+
     rigid_update(this._floor_x, dt, dt0)
+
+
+    if (this._x < -800) {
+      this._floor_x.x = -800
+      this._floor_x.x0 = -800
+    }
+    if (this._x > 800) {
+      this._floor_x.x = 800
+      this._floor_x.x0 = 800
+    }
   }
 
   _draw() {
@@ -438,8 +479,27 @@ class PlayerFloor extends WithPlays {
 
 class Cinema extends WithPlays {
 
+  get x1() {
+    return this._p1._x
+  }
+
+  get x2() {
+    return this._p2._x
+  }
+
+  get m() {
+    return (this.x1 + this.x2) / 2
+  }
+
+  get d() {
+    return Math.abs(this.x1 - this.x2)
+  }
 
   _init() {
+    this._p1 = this.plays.tag(PlayerFloor, 'user')
+    this._p2 = this.plays.tag(PlayerFloor, 'ai')
+
+    this.c.o.z = -500
   }
 
 
@@ -447,9 +507,13 @@ class Cinema extends WithPlays {
 
     let a = Math.sin(this.life * 0.001) * 500
 
-    this.c.o.z = -500
-    this.c.o.y = 0
-    this.c.o.x = 0
+
+    this.c.o.x = lerp_dt(0.1, dt, this.c.o.x, this.m)
+    this.c.l.x = lerp_dt(0.1, dt, this.c.l.x, this.m)
+
+    let dz = this.d > 800 ? -500 + (this.d / 1600) * -360 : -500
+
+    this.c.o.z = lerp_dt(0.9, dt/ticks.one, this.c.o.z, dz)
 
     let d = 0.3;
     let rate = 1
@@ -472,19 +536,18 @@ const ai_update = (_p: PlayerFloor, dt: number, dt0: number) => {
 
 const user_update = (_p: PlayerFloor) => {
 
-  let left_been = _p.i.been_ons.find(_ => _[0] === 'ArrowLeft')?.[1],
-    right_been = _p.i.been_ons.find(_ => _[0] === 'ArrowRight')?.[1]
+  let _left_on = _p.i.just_ons.find(_ => _ === 'ArrowLeft'),
+    _right_on = _p.i.just_ons.find(_ => _ === 'ArrowRight')
 
-  let _left_just = _p.i.just_ons.find(_ => _ === 'ArrowLeft'),
-    _right_just = _p.i.just_ons.find(_ => _ === 'ArrowRight')
+  let _left_off = _p.i.just_offs.find(_ => _ === 'ArrowLeft'),
+    _right_off = _p.i.just_offs.find(_ => _ === 'ArrowRight')
 
 
-  if (left_been || _left_just) {
-    _p._req_walk(-1)
-  } else if (right_been || _right_just) {
-    _p._req_walk(1)
-  }
+  let h_on = _left_on ? -1 : _right_on ? 1 : 0
+  let h_off = _left_off ? -1 : _right_off ? 1 : 0
 
+
+  _p._horizontal(h_on, h_off)
 }
 
 export default class AllPlays extends PlayMakes {
@@ -512,7 +575,6 @@ export default class AllPlays extends PlayMakes {
     this.objects = []
     this.ui = []
 
-    this.make(Cinema)
     this.make(PlayerFloor, {
       tag: 'user',
       v_pos: Vec2.make(-300, 0),
@@ -524,6 +586,9 @@ export default class AllPlays extends PlayMakes {
       v_pos: Vec2.make(300, 0),
       z: 0
     })
+
+
+    this.make(Cinema)
   }
 
   _update(dt: number, dt0: number) {
