@@ -6,7 +6,7 @@ import { generate, psfx } from './audio'
 import { appr, lerp, lerp_dt } from './lerp'
 import { make_rigid, rigid_update } from './rigid'
 import { __f_attack, __f_back_dash, __f_dash, __f_back_walk, __f_walk, __f_idle, __f_turn } from './animstate'
-import { AnimState2 } from './animstate'
+import { AnimState2, hurtboxes } from './animstate'
 
 console.log(__f_walk)
 
@@ -360,6 +360,27 @@ class PlayerFloor extends WithPlays {
     return this._floor_x.x
   }
 
+
+  get hurtboxes() {
+    let { res } = this._a
+
+    if (res) {
+      return hurtboxes.get(res[0]) || []
+    }
+    return []
+  }
+
+
+  get hitboxes() {
+    let { res } = this._a
+
+    if (res) {
+      return hurtboxes.hit(res[0]) || []
+    }
+    return []
+  }
+
+
   _init() {
 
     let { x } = this.data.v_pos
@@ -453,7 +474,6 @@ class PlayerFloor extends WithPlays {
 
     this._a.update(dt, dt0)
 
-
     let { res, res0 } = this._a
 
     if (this._a._f === __f_attack) {
@@ -527,6 +547,27 @@ class PlayerFloor extends WithPlays {
     this.g.texture(0xff0000, 0, 0, 0, 
                    _x, _y + 60, -100 + z, 
                    w * 2, h * 2, x, y, w, h, 1024, 1024)
+
+
+    let { hurtboxes, hitboxes } = this
+
+
+    hitboxes.forEach(_ => {
+      let [__x, __y, _w, _h] = _
+      this.g.texture(0xcccccc, 0, 0, 0,
+                     _x + __x, __y + _y + 60, -100 + z + -1,
+                     _w * 2, _h * 2, 
+                     1008, 2, 2, 2, 1024, 1024)
+    })
+
+
+    hurtboxes.forEach(_ => {
+      let [__x, __y, _w, _h] = _
+      this.g.texture(0xcccccc, 0, 0, 0,
+                     _x + __x, __y + _y + 60, -100 + z + -1,
+                     _w * 2, _h * 2, 
+                     1008, 0, 2, 2, 1024, 1024)
+    })
   }
 }
 

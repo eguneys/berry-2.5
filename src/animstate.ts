@@ -55,10 +55,67 @@ export let __f_attack = `att@0.1 _`
 
 
 let _hu = [
-  ``
+  `i_0@0,50,30,100`,
+  `i_1@0,40,30,100`,
+  `w_0@0,40,30,100`,
+  `w_1@0,40,30,100`,
+  `w_2@0,40,30,100`,
+  `att_0@-30,30,30,100`
+]
+
+let _hi = [
+  `att_1@50,30,60,30`
 ]
 
 
+
+
+export class Hitboxes {
+
+  get(name: string) {
+    return this._ff.get(name)
+  }
+
+  hit(name: string) {
+    return this._ft.get(name)
+  }
+
+
+  constructor() {
+    this._ff = new Map(_hu.map(_ => {
+      let [name, res] = _.split('@')
+
+      let __res = res.split(' ').map(_ => {
+        let [x, y, w, h] = _.split(',')
+
+        return [+x, +y, +w, +h]
+      })
+
+      return [name, __res]
+    }))
+
+    this._ft = new Map(_hi.map(_ => {
+      let [name, res] = _.split('@')
+
+      let __res = res.split(' ').map(_ => {
+        let [x, y, w, h] = _.split(',')
+
+        return [+x, +y, +w, +h]
+      })
+
+      return [name, __res]
+    }))
+
+
+
+
+
+
+  }
+}
+
+
+export const hurtboxes = new Hitboxes()
 
 export class AnimState2 {
 
