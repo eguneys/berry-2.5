@@ -491,6 +491,8 @@ class PlayerFloor extends WithPlays {
 
     if (this.data.tag === 'user') {
       user_update(this)
+    } else {
+      ai_update(this)
     }
 
     this._a.update(dt, dt0)
@@ -621,6 +623,14 @@ class Hitstop extends WithPlays {
       }
     }
 
+    if (this._p1._a._f === __f_dam) {
+      if (this._p2._t_hitstop <= -ticks.seconds) {
+        this._p1._t_hitstop = ticks.sixth
+        this._p2._t_hitstop = ticks.sixth
+      }
+    }
+
+
   }
 }
 
@@ -651,6 +661,15 @@ class Collision extends WithPlays {
   _update(dt: number, dt0: number) {
 
     let { p1_hit, p2_hurt } = this
+
+    let { p2_hit, p1_hurt } = this
+
+    if (p2_hit && p1_hurt) {
+      if (rect_rect(p2_hit, p1_hurt)) {
+        this._p1._a = new AnimState2(__f_dam)
+      }
+    }
+
 
 
     if (p1_hit && p2_hurt) {
@@ -718,6 +737,14 @@ class Cinema extends WithPlays {
 
 const ai_update = (_p: PlayerFloor, dt: number, dt0: number) => {
 
+  //let h_on = rnd_int_h(1)
+  //let h_off = rnd_int_h(1)
+
+  //_p._horizontal(h_on, h_off)
+
+  if (rnd_int(50) < 4) {
+    _p._attack()
+  }
 
 }
 
