@@ -401,6 +401,7 @@ class PlayerFloor extends WithPlays {
 
     let { x } = this.data.v_pos
 
+    this._t_hitstop = 0
 
     this._floor_y = make_rigid(0, {
       mass: 100,
@@ -481,7 +482,11 @@ class PlayerFloor extends WithPlays {
 
   _update(dt: number, dt0: number) {
 
+    this._t_hitstop = appr(this._t_hitstop, -ticks.seconds, dt)
 
+    if (this._t_hitstop > 0) {
+      return
+    }
     this._floor_x.force = 0
 
     if (this.data.tag === 'user') {
@@ -574,6 +579,7 @@ class PlayerFloor extends WithPlays {
                    w * 2, h * 2, x, y, w, h, 1024, 1024)
 
 
+                   return
     let { hurtboxes, hitboxes } = this
 
 
@@ -596,6 +602,27 @@ class PlayerFloor extends WithPlays {
   }
 }
 
+
+class Hitstop extends WithPlays {
+
+  _init() {
+    this._p1 = this.plays.tag(PlayerFloor, 'user')
+    this._p2 = this.plays.tag(PlayerFloor, 'ai')
+  }
+
+
+  _update(dt: number, dt0: number) {
+
+    let { res } = this._p2._a
+    if (this._p2._a._f === __f_dam) {
+      if (this._p1._t_hitstop <= -ticks.seconds) {
+        this._p1._t_hitstop = ticks.sixth
+        this._p2._t_hitstop = ticks.sixth
+      }
+    }
+
+  }
+}
 
 class Collision extends WithPlays {
 
@@ -750,6 +777,7 @@ export default class AllPlays extends PlayMakes {
     })
 
 
+    this.make(Hitstop)
     this.make(Collision)
     this.make(Cinema)
   }
