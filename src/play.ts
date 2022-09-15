@@ -460,7 +460,7 @@ class PlayerFloor extends WithPlays {
       if (res && res0) {
         let { i } = this._a
         if (res[0].match('att2')) {
-          this._floor_x.force = this._floor_x.opts.max_force * this._facing * 5 * (0.8 - i) * (0.8 - i)
+          this._floor_x.force = this._floor_x.opts.max_force * this._facing * 1 * (0.8 - i) * (0.8 - i)
         }
       }
       if (!res) {
@@ -470,7 +470,7 @@ class PlayerFloor extends WithPlays {
     if (this._a._f === __f_dash) {
       if (res && res0) {
         let { i } = this._a
-        this._floor_x.force = this._floor_x.opts.max_force * this._facing * 2 * (1 - i * i * i)
+        this._floor_x.force = this._floor_x.opts.max_force * this._facing * 1.2 * (1 - i * i)
       }
 
       if (!res) {
@@ -479,7 +479,7 @@ class PlayerFloor extends WithPlays {
     } else if (this._a._f === __f_back_dash) {
       if (res && res0) {
         let { i } = this._a
-        this._floor_x.force = this._floor_x.opts.max_force * -1 * this._facing * 1.4 * (1 - i * i)
+        this._floor_x.force = this._floor_x.opts.max_force * -1 * this._facing * 1 * (1 - i * i)
       }
 
       if (!res) {
@@ -525,7 +525,7 @@ class PlayerFloor extends WithPlays {
 
     let i = Math.abs(Math.cos(this.life * 0.001)) * 5
     this.g.texture(0xff0000, 0, 0, 0, 
-                   _x, _y, -100 + z, 
+                   _x, _y + 60, -100 + z, 
                    w * 2, h * 2, x, y, w, h, 1024, 1024)
   }
 }
@@ -678,8 +678,8 @@ export default class AllPlays extends PlayMakes {
     this.g.texture(0xcccccc, 0, half_pi, 0, 0, 0, 0, 200, 4, 0, 0, 10, 10, 1024, 1024)
    */
 
-    this.g.texture(0xcccccc, half_pi, 0, 0, 0, 200, -100, 2000, 2000, 0, 0, 128, 128, 1024, 1024)
-    this.g.texture(0xcccccc, 0, 0, 0, 0, 0, 100, 2000, 2000, 0, 0, 128, 128, 1024, 1024)
+    this.g.texture(0xcccccc, half_pi, 0, 0, 0, 200, -100, 2000, 2000, 0, 120, 512, 120, 1024, 1024)
+    this.g.texture(0xcccccc, 0, 0, 0, 0, 0, 100, 2000, 2000, 0, 0, 256, 120, 1024, 1024)
 
     this.z_objects.forEach(_ => _.draw())
   }
