@@ -5,14 +5,16 @@ import { generate, psfx } from './audio'
 
 import { appr, lerp, lerp_dt } from './lerp'
 import { make_rigid, rigid_update } from './rigid'
-import { __f_attack, __f_back_dash, __f_dash, __f_back_walk, __f_walk, __f_idle, __f_turn } from './animstate'
+import { __f_dam, __f_attack, __f_back_dash, __f_dash, __f_back_walk, __f_walk, __f_idle, __f_turn } from './animstate'
 import { AnimState2, hurtboxes } from './animstate'
-
-console.log(__f_walk)
 
 
 const quick_burst = (radius: number, start: number = 0.8, end: number = 0.2) => 
 tween([start, start, 1, end].map(_ => _ * radius), [ticks.five + ticks.three, ticks.three * 2, ticks.three * 2])
+
+const rect_rect = (a: Rectangle, b: Rectangle) => {
+  return !!a.vertices.find(_ => rect_orig(b, _)) || rect_orig(b, a.center)
+}
 
 const rect_orig = (rect: Rectangle, o: Vec2) => {
   return rect.x1 <= o.x && o.x <= rect.x2 && rect.y1 <= o.y && o.y <= rect.y2
@@ -365,9 +367,16 @@ class PlayerFloor extends WithPlays {
     let { res } = this._a
 
     if (res) {
-      return hurtboxes.get(res[0]) || []
+      let _ = hurtboxes.get(res[0])?.[0]
+      if (_) {
+        let __ = [
+          _[0] + this._x,
+          _[1] + 60,
+          _[2] * 2,
+          _[3] * 2]
+        return Rectangle.make(...__)
+      }
     }
-    return []
   }
 
 
@@ -375,9 +384,16 @@ class PlayerFloor extends WithPlays {
     let { res } = this._a
 
     if (res) {
-      return hurtboxes.hit(res[0]) || []
+      let _ = hurtboxes.hit(res[0])?.[0]
+      if (_) {
+        let __ = [
+          _[0] + this._x,
+          _[1] + 60,
+          _[2] * 2,
+          _[3] * 2]
+        return Rectangle.make(...__)
+      }
     }
-    return []
   }
 
 
@@ -519,6 +535,15 @@ class PlayerFloor extends WithPlays {
       }
     }
 
+    if (this._a._f === __f_dam) {
+      if (res && res0) {
+        let { i } = this._a
+        this._floor_x.force = this._floor_x.opts.max_force * this._facing * (1 - i)
+      }
+      if (!res) {
+        this._a = new AnimState2(__f_idle)
+      }
+    }
 
 
 
@@ -552,22 +577,61 @@ class PlayerFloor extends WithPlays {
     let { hurtboxes, hitboxes } = this
 
 
-    hitboxes.forEach(_ => {
-      let [__x, __y, _w, _h] = _
+    if (hitboxes) {
+      let [__x, __y, _w, _h] = hitboxes.vs
       this.g.texture(0xcccccc, 0, 0, 0,
-                     _x + __x, __y + _y + 60, -100 + z + -1,
-                     _w * 2, _h * 2, 
+                     __x, __y, -100 + z + -1,
+                     _w, _h, 
                      1008, 2, 2, 2, 1024, 1024)
-    })
 
+    }
 
-    hurtboxes.forEach(_ => {
-      let [__x, __y, _w, _h] = _
+    if (hurtboxes) {
+      let [__x, __y, _w, _h] = hurtboxes.vs 
       this.g.texture(0xcccccc, 0, 0, 0,
-                     _x + __x, __y + _y + 60, -100 + z + -1,
-                     _w * 2, _h * 2, 
+                     __x, __y, -100 + z + -1,
+                     _w, _h, 
                      1008, 0, 2, 2, 1024, 1024)
-    })
+    }
+  }
+}
+
+
+class Collision extends WithPlays {
+
+  get p1_hit() {
+    return this._p1.hitboxes
+  }
+
+  get p1_hurt() {
+    return this._p1.hurtboxes
+  }
+
+  get p2_hit() {
+    return this._p2.hitboxes
+  }
+
+  get p2_hurt() {
+    return this._p2.hurtboxes
+  }
+
+  _init() {
+    this._p1 = this.plays.tag(PlayerFloor, 'user')
+    this._p2 = this.plays.tag(PlayerFloor, 'ai')
+  }
+
+
+  _update(dt: number, dt0: number) {
+
+    let { p1_hit, p2_hurt } = this
+
+
+    if (p1_hit && p2_hurt) {
+      if (rect_rect(p1_hit, p2_hurt)) {
+        this._p2._a = new AnimState2(__f_dam)
+      }
+    }
+
   }
 }
 
@@ -686,6 +750,7 @@ export default class AllPlays extends PlayMakes {
     })
 
 
+    this.make(Collision)
     this.make(Cinema)
   }
 

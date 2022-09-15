@@ -39,6 +39,7 @@ let _ff = [
   `d@350,0,70,120 1`,
   `bd@350,0,70,120 1`,
   `att@0,120,124,130 3`,
+  `dam@350,0,70,120 1`,
 ]
 
 
@@ -51,6 +52,7 @@ export let __f_turn = `tt@0.1 _`
 export let __f_dash = `d@0.2 _`
 export let __f_back_dash = `bd@0.2 _`
 export let __f_attack = `att@0.1 _`
+export let __f_dam = `dam@0.2 _`
 
 
 
