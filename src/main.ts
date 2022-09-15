@@ -6,6 +6,9 @@ import Play from './play'
 import { Input } from './input'
 import { Canvas, Graphics, Batcher } from './webgl'
 import sprites_png from '../assets/sprites.png'
+import sprites2_png from '../assets/sprites2.png'
+import shadings_png from '../assets/shadings.png'
+import colors_png from '../assets/colors.png'
 import Camera from './camera'
 
 function load_image(path: string): Promise<HTMLImageElement> {
@@ -45,12 +48,15 @@ function loop(fn: (dt: number, dt0: number) => void) {
 }
 
 export default function app(element: HTMLElement) {
-  load_image(sprites_png).then(image => start(element, image))
+  Promise.all([
+    load_image(shadings_png),
+    load_image(colors_png),
+    load_image(sprites_png)]).then(images => start(element, images))
 }
 
 
-function start(element: HTMLElement, image: HTMLImageElement) {
-  let c = new Camera(Vec3.make(0, -100, -200), Vec3.zero)
+function start(element: HTMLElement, images: Array<HTMLImageElement>) {
+  let c = new Camera(Vec3.zero, Vec3.zero)
   let canvas = new Canvas(element, w, h)
   let graphics = new Graphics(canvas, c)
   let g = new Batcher(graphics)
@@ -66,7 +72,7 @@ function start(element: HTMLElement, image: HTMLImageElement) {
 
   let p = new Play(_ctx).init()
 
-  g.init(colors.bg, image)
+  g.init(colors.bg, images)
   let t = 0
 
   loop((dt: number, dt0: number) => {

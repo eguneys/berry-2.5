@@ -3,10 +3,10 @@ export class Billboard {
 
   static make = (x: number, y: number, z: number,
                  w: number, h: number) => new Billboard([
-    Vec3.make(x, y, z),
+    Vec3.make(x, y - h, z),
+    Vec3.make(x + w, y - h, z),
     Vec3.make(x + w, y, z),
-    Vec3.make(x + w, y + h, z),
-    Vec3.make(x, y + h, z)
+    Vec3.make(x, y, z),
   ])
 
   static get unit() { return Billboard.make(0, 0, 0, 1, 1) }
@@ -17,7 +17,7 @@ export class Billboard {
   }
 
   get indices(): Uint16Array {
-    return new Uint16Array([0, 1, 2, 0, 2, 3])
+    return new Uint16Array([1, 0, 3, 1, 3, 2])
   }
 
 
@@ -210,6 +210,31 @@ export class Mat4 {
     ]
 
     return new Mat4(out)
+  }
+
+
+  static frustum = (top: number, bottom: number, left: number, right: number, near: number, far: number) => {
+
+
+    let out = [
+      2 * near / (right - left), 0, 0, 0,
+      0,                         2 * near/(top -bottom), 0, 0,
+
+      (right+left)/(right-left),(top+bottom)/(top-bottom), -(far+near)/(far-near), -1,
+      0, 0, -2*far*near/(far-near), 0
+    ]
+    return new Mat4(out)
+  }
+
+  static perspective_from_frust = (fov: number, aspectRatio: number, near: number, far: number) => {
+    let top = near * Math.tan(fov * 0.5),
+      height = top * 2,
+      width = aspectRatio * height,
+      left = -0.5 * width,
+      right = left + width,
+      bottom = top - height
+
+    return this.frustum(top, bottom, left, right, near, far)
   }
 
   static lookAt = (cam_pos: Vec3, target: Vec3, up: Vec3) => {

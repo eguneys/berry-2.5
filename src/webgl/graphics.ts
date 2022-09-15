@@ -11,25 +11,8 @@ export class Graphics {
   get width(): number { return this.canvas.width }
   get height(): number { return this.canvas.height }
 
-
-  get v_matrix() {
-    return this.c_matrix.inverse
-  }
-
-  get vp_matrix() {
-    return this.p_matrix.mul(this.v_matrix)
-  }
-
   get u_matrix() {
-    return this.vp_matrix
-  }
-
-  get p_matrix() {
-    return this.camera.p_matrix
-  }
-
-  get c_matrix() {
-    return this.camera.c_matrix
+    return this.camera.vp_matrix
   }
 
   constructor(readonly canvas: Canvas, readonly camera: Camera) {}
@@ -48,7 +31,7 @@ export class Graphics {
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
     gl.enable(gl.DEPTH_TEST)
-    gl.enable(gl.CULL_FACE)
+    //gl.enable(gl.CULL_FACE)
   }
 
   glProgram = (vSource: string, fSource: string, nb: number) => {
@@ -58,7 +41,6 @@ export class Graphics {
     let { program, uniformData, attributeData } = 
       generateProgram(gl, vSource, fSource)
 
-    //gl.uniform1i(uniformData['uSampler'].location, 0)
 
     let vao = gl.createVertexArray()
     gl.bindVertexArray(vao)
@@ -104,11 +86,12 @@ export class Graphics {
     }
   }
 
-  glTexture() {
+  glTexture(n: number) {
 
     let { gl } = this
     let glTexture = gl.createTexture() 
 
+    gl.activeTexture(gl.TEXTURE0 + n)
     gl.bindTexture(gl.TEXTURE_2D, glTexture)
 
     gl.texImage2D(gl.TEXTURE_2D, 0,
@@ -130,8 +113,11 @@ export class Graphics {
     return { glTexture }
   }
 
-  glUseTexture(glTexture, texture) {
+  glUseTexture(glTexture, texture, n) {
     let { gl } = this
+    
+
+   gl.activeTexture(gl.TEXTURE0 + n)
    gl.bindTexture(gl.TEXTURE_2D, glTexture)
    gl.texImage2D(gl.TEXTURE_2D, 0,
      gl.RGBA, texture.width, texture.height, 0, gl.RGBA, gl.UNSIGNED_BYTE,
@@ -144,13 +130,23 @@ export class Graphics {
     gl.useProgram(program)
 
 
+    if (uniformData['uSampler']) {
+      gl.uniform1i(uniformData['uSampler'].location, 0)
+      gl.uniform1i(uniformData['uSampler2'].location, 1)
+    } else {
+      gl.uniform1i(uniformData['uSampler3'].location, 2)
+    }
     //gl.uniformMatrix3fv(uniformData['projectionMatrix'].location, false, this.projectionMatrix.array_t)
     gl.uniformMatrix4fv(uniformData['u_matrix'].location, false, this.u_matrix.out)
   }
 
-  glUniformUpdate(uniformData, uniform) {
-    //let { gl } = this
-    //gl.uniformVec3fv(uniformData['tint'].location, false, color_rgb(tint))
+  glUniformUpdate(uniformData, u_blend) {
+    let { gl } = this
+    if (!uniformData['u_blend']) { return } 
+    gl.uniform1f(uniformData['u_blend'].location, u_blend[0]);
+    gl.uniform1f(uniformData['u_mix'].location, u_blend[1]);
+    gl.uniform1f(uniformData['u_hmix'].location, u_blend[2]);
+    gl.uniform1f(uniformData['u_hhmix'].location, u_blend[3]);
   }
 
   glAttribUpdate(buffer, srcData) {

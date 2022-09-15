@@ -1,11 +1,14 @@
-import { w, h, colors, ticks } from './shared'
+import { ticks } from './shared'
 import { ti, completed, read, update, tween } from './anim'
 import { Line, Vec2, Rectangle, Circle } from './vec2'
 import { generate, psfx } from './audio'
-import { arr_shuffle } from './util'
 
-import { appr, lerp } from './lerp'
+import { appr, lerp, lerp_dt } from './lerp'
 import { make_rigid, rigid_update } from './rigid'
+import { __f_attack, __f_back_dash, __f_dash, __f_back_walk, __f_walk, __f_idle, __f_turn } from './animstate'
+import { AnimState2 } from './animstate'
+
+console.log(__f_walk)
 
 
 const quick_burst = (radius: number, start: number = 0.8, end: number = 0.2) => 
@@ -72,6 +75,12 @@ function arr_scale(arr: Array<A>, n: number) {
   return arr.map(_ => _ * n)
 }
 
+
+export const pi = Math.PI;
+export const half_pi = pi / 2;
+export const third_pi = pi / 3;
+export const tau = pi * 2;
+export const thirdtau = tau/ 3;
 
 const slow_burst = (radius: number, rng: RNG = random) => 
 tween([0.1, 0.1, 0.5, 1].map(_ => _ * radius), arr_shuffle([ticks.five + ticks.three, ticks.three * 2, ticks.five * 2, ticks.five, ticks.three * 2], rng))
@@ -218,6 +227,7 @@ abstract class WithPlays extends PlayMakes {
   constructor(readonly plays: AllPlays) {
     super(plays.ctx)
     this.on_dispose = []
+    this.z = 0
   }
 
   init() {
@@ -346,12 +356,8 @@ class Trail extends WithPlays {
 
 class PlayerFloor extends WithPlays {
 
-  get x() {
+  get _x() {
     return this._floor_x.x
-  }
-
-  get y() {
-    return this._floor_y.x
   }
 
   _init() {
@@ -362,102 +368,243 @@ class PlayerFloor extends WithPlays {
     this._floor_y = make_rigid(0, {
       mass: 100,
       air_friction: 0.9,
-      max_speed: 100,
+      max_speed: 50,
       max_force: 10
     })
 
     this._floor_x = make_rigid(x, {
       mass: 100,
-      air_friction: 0.9,
-      max_speed: 100,
-      max_force: 10
+      air_friction: 0.6,
+      max_speed: 28,
+      max_force: 4
     })
+
+    this.z = this.data.z
+
+    this._facing = 1
+
+    this._a = new AnimState2(__f_idle)
+  }
+
+  _attack() {
+    this._a = new AnimState2(__f_attack)
+  }
+
+  _horizontal(on, off) {
+
+    if (off !== 0) {
+      this._t_off = this.life * off
+    }
+    if (on !== 0) {
+      let { _t_off } = this
+      this._t_off = undefined
+      if (!!_t_off && on === Math.sign(_t_off)) {
+        let d = this.life - Math.abs(_t_off)
+
+        if (d < ticks.sixth) {
+          if (Math.sign(_t_off) === this._facing) {
+            this._a = new AnimState2(__f_dash)
+          } else {
+            this._a = new AnimState2(__f_back_dash)
+          }
+          return
+        }
+
+      }
+    }
+
+    if(this._a._f === __f_back_walk) {
+      if (off === this._facing * -1) {
+        this._a = new AnimState2(__f_idle)
+      }
+      if (this._facing === on) {
+        this._a = new AnimState2(__f_walk)
+      } else if (this._facing === -on) {
+        this._a = new AnimState2(__f_back_walk)
+      }
+
+    } else if (this._a._f === __f_walk) {
+      if (off === this._facing) {
+        this._a = new AnimState2(__f_idle)
+      }
+      if (this._facing === on) {
+        this._a = new AnimState2(__f_walk)
+      } else if (this._facing === -on) {
+        this._a = new AnimState2(__f_back_walk)
+      }
+
+    } else if (this._a._f === __f_idle) {
+      if (this._facing === on) {
+        this._a = new AnimState2(__f_walk)
+      } else if (this._facing === -on) {
+        this._a = new AnimState2(__f_back_walk)
+      }
+    }
   }
 
   _update(dt: number, dt0: number) {
 
 
     this._floor_x.force = 0
-    this._floor_y.force = 0
 
-    user_update(this)
-
-    if (this._floor_y.x > 0 && this._floor_y.vx < 0.1) {
-
-      let m_s = this._floor_y.opts.max_speed,
-        m_f = this._floor_y.opts.max_force
-      let d = this._floor_y.x
-
-      let r_s = m_s * (d / 100)
-      let c_s = Math.min(r_s, m_s)
-      let d_v = c_s
-
-      this._floor_y.force = -c_s / m_s * m_f
+    if (this.data.tag === 'user') {
+      user_update(this)
     }
+
+    this._a.update(dt, dt0)
+
+
+    let { res, res0 } = this._a
+
+    if (this._a._f === __f_attack) {
+      if (res && res0) {
+        let { i } = this._a
+        if (res[0].match('att2')) {
+          this._floor_x.force = this._floor_x.opts.max_force * this._facing * 1 * (0.8 - i) * (0.8 - i)
+        }
+      }
+      if (!res) {
+        this._a = new AnimState2(__f_idle)
+      }
+    }
+    if (this._a._f === __f_dash) {
+      if (res && res0) {
+        let { i } = this._a
+        this._floor_x.force = this._floor_x.opts.max_force * this._facing * 1.2 * (1 - i * i)
+      }
+
+      if (!res) {
+        this._a = new AnimState2(__f_idle)
+      }
+    } else if (this._a._f === __f_back_dash) {
+      if (res && res0) {
+        let { i } = this._a
+        this._floor_x.force = this._floor_x.opts.max_force * -1 * this._facing * 1 * (1 - i * i)
+      }
+
+      if (!res) {
+        this._a = new AnimState2(__f_idle)
+      }
+    }
+    if (this._a._f === __f_back_walk) {
+      if (res && res0) {
+        let { i } = this._a
+        this._floor_x.force = this._floor_x.opts.max_force * -1 * this._facing * 0.6 * (1 - i)
+      }
+    }
+    if (this._a._f === __f_walk) {
+      if (res && res0) {
+        let { i } = this._a
+        this._floor_x.force = this._floor_x.opts.max_force * this._facing * (1 - i)
+      }
+    }
+
+
+
 
     rigid_update(this._floor_x, dt, dt0)
-    rigid_update(this._floor_y, dt, dt0)
 
-    if (this._floor_y.x < 0) {
-      this._floor_y.x = 0
-      this._floor_y.x0 = 0
+
+    if (this._x < -800) {
+      this._floor_x.x = -800
+      this._floor_x.x0 = -800
     }
-
+    if (this._x > 800) {
+      this._floor_x.x = 800
+      this._floor_x.x0 = 800
+    }
   }
 
   _draw() {
     
-    let { x, y } = this
+    let { z } = this.data
+    let { _x } = this
+    let _y = 0
 
-    let w = 40,
-      h = 60
+    let [name, x, y, w, h] = this._a.res
 
-
-    this.g.texture(0x000000, 0, 0, 0, x, -y - h/2, -100, w, h, 0, 0, 48, 48, 512, 512)
-    this.g.texture(0x100000, Math.PI*0.5, 0, 0, x, -y - 1, -100, w * 2, h, 0, 0, 48, 48, 512, 510)
-
+    let i = Math.abs(Math.cos(this.life * 0.001)) * 5
+    this.g.texture(0xff0000, 0, 0, 0, 
+                   _x, _y + 60, -100 + z, 
+                   w * 2, h * 2, x, y, w, h, 1024, 1024)
   }
 }
 
 
+
 class Cinema extends WithPlays {
 
+  get x1() {
+    return this._p1._x
+  }
+
+  get x2() {
+    return this._p2._x
+  }
+
+  get m() {
+    return (this.x1 + this.x2) / 2
+  }
+
+  get d() {
+    return Math.abs(this.x1 - this.x2)
+  }
 
   _init() {
+    this._p1 = this.plays.tag(PlayerFloor, 'user')
+    this._p2 = this.plays.tag(PlayerFloor, 'ai')
+
+    this.c.o.z = -500
   }
 
 
   _update(dt: number, dt0: number) {
 
-    if (!this._user || !this._user.alive) {
-      this._user = this.plays.tag(PlayerFloor, 'user')
-    }
+    let a = Math.sin(this.life * 0.001) * 500
 
-    if (this._user) {
-      this.c.o.x = this._user.x
-      this.c.l.x = this.c.o.x
+
+    this.c.o.x = lerp_dt(0.1, dt, this.c.o.x, this.m)
+    this.c.l.x = lerp_dt(0.1, dt, this.c.l.x, this.m)
+
+    let dz = this.d > 800 ? -500 + (this.d / 1600) * -360 : -500
+
+    this.c.o.z = lerp_dt(0.9, dt/ticks.one, this.c.o.z, dz)
+
+    let d = 0.3;
+    let rate = 1
+    let i = Math.abs(Math.sin(this.life * 0.0001 * rate)) * d
+    let i2 = Math.abs(Math.sin(this.life * 0.0002 * rate)) * d
+    let i3 = Math.abs(Math.sin(this.life * 0.0004 * rate)) * d
+    this.g.u_blend = [0.13 + i * 0.05, 2.24 + i3*0.1, 0.54 + i3*0.1, 0.55 + i2*0.1]
+    /*
+    if (this.on_interval(ticks.half)) {
+      console.log(this.g.u_blend)
     }
+    */
   }
 }
 
+const ai_update = (_p: PlayerFloor, dt: number, dt0: number) => {
 
-const user_update = (_p: PlayerFloor, dt: number, dt0: number) => {
-  let left = _p.i.been_ons.find(_ => _[0] === 'ArrowLeft')?.[1],
-    right = _p.i.been_ons.find(_ => _[0] === 'ArrowRight')?.[1]
 
-  let f = _p.i.just_ons.find(_ => _ === 'f')
+}
 
-  if (f) {
-    _p._floor_y.force = 1
-  }
+const user_update = (_p: PlayerFloor) => {
 
-  if (left) {
-    _p._floor_x.force = -1
-  }
-  if (right) {
-    _p._floor_x.force = 1
-  }
+  let _left_on = _p.i.just_ons.find(_ => _ === 'ArrowLeft'),
+    _right_on = _p.i.just_ons.find(_ => _ === 'ArrowRight')
 
+  let _left_off = _p.i.just_offs.find(_ => _ === 'ArrowLeft'),
+    _right_off = _p.i.just_offs.find(_ => _ === 'ArrowRight')
+
+  let _f_on = _p.i.just_ons.find(_ => _ === 'f')
+
+  let h_on = _left_on ? -1 : _right_on ? 1 : 0
+  let h_off = _left_off ? -1 : _right_off ? 1 : 0
+
+
+  _p._horizontal(h_on, h_off)
+  if (_f_on) { _p._attack() }
 }
 
 export default class AllPlays extends PlayMakes {
@@ -474,51 +621,69 @@ export default class AllPlays extends PlayMakes {
     return o.find(_ => _ instanceof Ctor && _.data.tag === tag)
   }
 
+
+  get z_objects() {
+    return this.objects.sort((a, b) => b.z - a.z)
+
+  }
+
   _init() {
 
     this.objects = []
     this.ui = []
 
-    this.make(Cinema)
     this.make(PlayerFloor, {
       tag: 'user',
-      v_pos: Vec2.zero
+      v_pos: Vec2.make(-300, 0),
+      z: -1
     })
 
     this.make(PlayerFloor, {
       tag: 'ai',
-      v_pos: Vec2.make(100, 0)
+      v_pos: Vec2.make(300, 0),
+      z: 0
     })
+
+
+    this.make(Cinema)
   }
 
   _update(dt: number, dt0: number) {
-    //this.c.o.y = 80 - Math.sin(this.life * 0.0001) * 80
-    //this.c.l.y = 80 - Math.sin(this.life * 0.0001) * 80
     this.objects.forEach(_ => _.update(dt, dt0))
   }
   _draw() {
 
-    let x = -1920 + 100,
-      y = -1080 + 100,
-      z = 0
-
-    this.g.texture(0xffffff, 0, 0, Math.sin(this.life*0.001) * Math.PI * 2, -x, y, -z, 1920, 1080, 0, 0, 100, 100, 100, 100)
-
-    this.g.texture(0xffffff, 0, 0, Math.sin(this.life * 0.0001) * Math.PI * 2, -100, 0, -50, 500, 20, 0, 0, 100, 100, 100, 100)
-    this.g.texture(0x00ffff, 0, 0, 0, 0, 0, 0, -20, 500, 0, 0, 100, 100, 100, 100)
-    this.g.texture(0xffff00, 0, 0, 0, 100, 0, -100, 20, 500, 0, 0, 100, 100, 100, 100)
-    this.g.texture(0x0000ff, 0, 0, 0, -20, 0, 190, 20, 500, 0, 0, 100, 100, 100, 100)
-    this.g.texture(0xff00ff, 0, 0, 0, 0, 0, -199, 200, 100, 0, 0, 100, 100, 100, 100)
-
-
-    this.g.texture(0xffff00, Math.PI*0.5, 0, 0, 0, 0, 0, 1200, 200, 0, 0, 100, 100, 100, 100)
-    this.g.texture(0xfffff0, Math.PI*0.5, 0, 0, 0, 0, -200, 1200, 200, 0, 0, 100, 100, 100, 100)
-
+    let a_pi = Math.sin(this.life * 0.001) * Math.PI
     /*
-    this.g.texture(0xff0000, 0, 0, 0, 0, 20, -100, 20, 50, 0, 0, 100, 100, 100, 100)
-    this.g.texture(0x000033, Math.PI*0.5, 0, 0, 0, 1, -100, 50, 50, 0, 0, 100, 100, 100, 100)
+    this.g.texture(0x0000ff, 0, 0, 0,    0, 0, 0,  320, 320, 0, 0, 16, 16, 512, 512)
+    this.g.texture(0x00ffff, 0, a_pi, 0,       0,-400, 0,  320, 320, 0, 0, 16, 16, 512, 512)
+    this.g.texture(0xff00ff, 0, 0, a_pi,       0,   0, 0,  320, 320, 0, 0, 16, 16, 512, 512)
    */
 
-    this.objects.forEach(_ => _.draw())
+
+    /*
+    this.g.texture(0x0000ff, half_pi * 0.8, 0, 0, 0, 200, 0, 1920, 300, 0, 0, 40, 40, 512, 512)
+    this.g.texture(0x0000ff, half_pi * 0.9, 0, 0, 0, 300, 0, 1920, 800, 0, 0, 40, 40, 512, 512)
+    this.g.texture(0xff0000, half_pi*0.2, 0, 0, 0, -100, 0, 1920, 540, 0, 0, 40, 40, 512, 512)
+     */
+
+
+
+    //this.g.texture(0xcccccc, 0, a_pi, 0, 0, 0, 0, 112 * 10, 32 * 50, 0, 0, 112, 32, 1024, 1024)
+    //this.g.texture(0xcccccc, a_pi, 0, 0, 0, 0, 50, 112 * 10, 32 * 50, 0, 0, 112, 32, 1024, 1024)
+
+    /*
+    this.g.texture(0xcccccc, 0, 0, 0, 0, 0, 0, 200, 4, 0, 0, 10, 10, 1024, 1024)
+    this.g.texture(0xcccccc, 0, 0, 0, 0, 0, 0, 4, 200, 0, 0, 10, 10, 1024, 1024)
+    this.g.texture(0xcccccc, 0, half_pi, 0, 0, 0, 0, 200, 4, 0, 0, 10, 10, 1024, 1024)
+   */
+
+    this.g.texture(0xcccccc, half_pi, 0, 0, 0, 200, -100, 2000, 2000, 0, 120, 512, 120, 1024, 1024)
+    this.g.texture(0xcccccc, 0, 0, 0, 0, 0, 100, 2000, 2000, 0, 0, 256, 120, 1024, 1024)
+
+    this.g.texture(0xcccccc, 0, -half_pi * 0.3, half_pi, -500, 0, 100, 2000, 2000, 0, 0, 256, 120, 1024, 1024)
+    this.g.texture(0xcccccc, 0, 0, half_pi * 0.3, 1500, 0, 100, 2000, 2000, 0, 0, 256, 120, 1024, 1024)
+
+    this.z_objects.forEach(_ => _.draw())
   }
 }

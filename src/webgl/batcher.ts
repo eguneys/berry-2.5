@@ -1,11 +1,52 @@
 import vSource from './default.vert'
-import fSource from './default.frag'
+import fSource from './skullgirls.frag'
+import fSource2 from './default.frag'
 import { color_rgb } from './util'
 import { Rectangle, Matrix } from '../vec2'
 import { Quat, Vec3, Mat4, Billboard } from './math4'
 import { Quad } from './quad'
 
 const m_template = Matrix.identity.scale(640, 360)
+
+
+/* math4 tests */
+/*
+const arr_equal = (a, b) => a.find((_, i) => _ !== b[i])
+const log_err = err => {  if (err !== undefined) { console.log(`fail ${err}`) } }
+
+let b = Billboard.unit
+log_err(arr_equal(b.vertices[0].vs, [0, -1, 0]))
+log_err(arr_equal(b.vertices[1].vs, [1, -1, 0]))
+log_err(arr_equal(b.vertices[2].vs, [1, 0, 0]))
+log_err(arr_equal(b.vertices[3].vs, [0, 0, 0]))
+
+b = Billboard.unit.transform(Mat4.identity)
+log_err(arr_equal(b.vertices[0].vs, [0, -1, 0]))
+log_err(arr_equal(b.vertices[1].vs, [1, -1, 0]))
+log_err(arr_equal(b.vertices[2].vs, [1, 0, 0]))
+log_err(arr_equal(b.vertices[3].vs, [0, 0, 0]))
+
+
+b = Billboard.unit.transform(Mat4.identity.translate(Vec3.make(-1/2, 1/2, 0)))
+log_err(arr_equal(b.vertices[0].vs, [-0.5, -0.5, 0]))
+log_err(arr_equal(b.vertices[1].vs, [0.5, -0.5, 0]))
+log_err(arr_equal(b.vertices[2].vs, [0.5, 0.5, 0]))
+log_err(arr_equal(b.vertices[3].vs, [-0.5, 0.5, 0]))
+
+
+b = Billboard.unit.transform(Mat4.identity
+                             .scale(Vec3.make(10, 20, 0))
+                             .translate(Vec3.make(-1/2, 1/2, 0))
+                            )
+log_err(arr_equal(b.vertices[0].vs, [-0.5, -0.5, 0]))
+log_err(arr_equal(b.vertices[1].vs, [0.5, -0.5, 0]))
+log_err(arr_equal(b.vertices[2].vs, [0.5, 0.5, 0]))
+log_err(arr_equal(b.vertices[3].vs, [-0.5, 0.5, 0]))
+*/
+
+
+
+
 
 export class Batcher {
 
@@ -16,17 +57,23 @@ export class Batcher {
 
   constructor(readonly g: Graphics) {}
 
-  init(bg, image) {
+  init(bg, images) {
     let { g, nb } = this
     this._def = g.glProgram(vSource, fSource, nb)
-    //this._def2 = g.glProgram(vSource, fSource2, nb)
+    this._def2 = g.glProgram(vSource, fSource2, nb)
 
     g.glOnce({
       color: bg
     })
 
-    let { glTexture } = g.glTexture()
-    g.glUseTexture(glTexture, image)
+    let { glTexture } = g.glTexture(0)
+    g.glUseTexture(glTexture, images[0], 0)
+
+    let { glTexture: glTexture2 } = g.glTexture(1)
+    g.glUseTexture(glTexture2, images[1], 1)
+
+    let { glTexture: glTexture3 } = g.glTexture(2)
+    g.glUseTexture(glTexture3, images[2], 2)
   }
 
 
@@ -37,21 +84,23 @@ export class Batcher {
     .rotateZ(rz)
     let res = Mat4.identity
     .translate(Vec3.make(x, y, z))
-    .translate(Vec3.make(1/2, 1/2, 0))
     .rotate(_q)
-    .scale(Vec3.make(w, h, 1))
-    .translate(Vec3.make(-1/2, -1/2, 0))
+    .scale(Vec3.make(w, h, 0))
+    .translate(Vec3.make(-1/2, 1/2, 0))
     let quad = Quad.make(tw, th, sx, sy, sw, sh)
-    this._els.push([0, res, color, quad, -1, th])
+    this._els.push([color === 0xcccccc ? this._def2 : 0, res, color, quad, -1, th])
   }
 
 
+  u_blend = [0.1, 2.5, 0.5, 0.5]
 
 
   render() {
 
     let { g } = this
     let { _indexBuffer, _attributeBuffer } = this
+
+    let { u_blend } = this
 
     g.glClear()
 
@@ -69,7 +118,6 @@ export class Batcher {
       let { vertexData, indices } = el
       let { fsUv } = quad
       let tintData = color_rgb(color)
-
       for (let k = 0; k < vertexData.length; k+= 3) {
         _attributeBuffer[aIndex++] = vertexData[k]
         _attributeBuffer[aIndex++] = vertexData[k+1]
@@ -101,6 +149,7 @@ export class Batcher {
 
         g.glAttribUpdate(attributeBuffer, _attributeBuffer)
         g.glIndexUpdate(indexBuffer, _indexBuffer)
+        g.glUniformUpdate(uniformData, u_blend)
 
         g.glDraw(iIndex, vao)
         aIndex = 0
