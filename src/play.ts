@@ -387,7 +387,7 @@ class PlayerFloor extends WithPlays {
       let _ = hurtboxes.hit(res[0])?.[0]
       if (_) {
         let __ = [
-          _[0] + this._x,
+          this._facing * _[0] + this._x,
           _[1] + 60,
           _[2] * 2,
           _[3] * 2]
@@ -487,6 +487,13 @@ class PlayerFloor extends WithPlays {
     if (this._t_hitstop > 0) {
       return
     }
+
+
+    if (!this._p2) {
+      let op_tag = this.data.tag === 'user' ? 'ai' : 'user'
+      this._p2 = this.plays.tag(PlayerFloor, op_tag)
+    }
+
     this._floor_x.force = 0
 
     if (this.data.tag === 'user') {
@@ -498,6 +505,13 @@ class PlayerFloor extends WithPlays {
     this._a.update(dt, dt0)
 
     let { res, res0 } = this._a
+
+    if (this._a._f === __f_turn) {
+      if (!res) {
+        this._facing *= -1
+        this._a = new AnimState2(__f_idle)
+      }
+    }
 
     if (this._a._f === __f_attack) {
       if (res && res0) {
@@ -545,10 +559,23 @@ class PlayerFloor extends WithPlays {
     if (this._a._f === __f_dam) {
       if (res && res0) {
         let { i } = this._a
-        this._floor_x.force = this._floor_x.opts.max_force * this._facing * (1 - i)
+        this._floor_x.force = this._floor_x.opts.max_force * -this._facing * (1 - i)
       }
       if (!res) {
         this._a = new AnimState2(__f_idle)
+      }
+    }
+
+
+    if (this._p2) {
+
+
+      let _d = this._p2._x - this._x
+
+      if (Math.sign(_d) !== this._facing) {
+        if (this._a._f !== __f_turn) {
+          this._a = new AnimState2(__f_turn)
+        }
       }
     }
 
@@ -578,7 +605,7 @@ class PlayerFloor extends WithPlays {
     let i = Math.abs(Math.cos(this.life * 0.001)) * 5
     this.g.texture(0xff0000, 0, 0, 0, 
                    _x, _y + 60, -100 + z, 
-                   w * 2, h * 2, x, y, w, h, 1024, 1024)
+                   this._facing * w * 2, h * 2, x, y, w, h, 1024, 1024)
 
 
                    return
@@ -617,16 +644,16 @@ class Hitstop extends WithPlays {
 
     let { res } = this._p2._a
     if (this._p2._a._f === __f_dam) {
-      if (this._p1._t_hitstop <= -ticks.seconds) {
-        this._p1._t_hitstop = ticks.sixth
-        this._p2._t_hitstop = ticks.sixth
+      if (this._p1._t_hitstop <= -ticks.half) {
+        this._p1._t_hitstop = ticks.thirds
+        this._p2._t_hitstop = ticks.thirds
       }
     }
 
     if (this._p1._a._f === __f_dam) {
-      if (this._p2._t_hitstop <= -ticks.seconds) {
-        this._p1._t_hitstop = ticks.sixth
-        this._p2._t_hitstop = ticks.sixth
+      if (this._p2._t_hitstop <= -ticks.half) {
+        this._p1._t_hitstop = ticks.thirds
+        this._p2._t_hitstop = ticks.thirds
       }
     }
 
