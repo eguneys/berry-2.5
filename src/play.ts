@@ -9,6 +9,9 @@ import { __f_dam, __f_attack, __f_back_dash, __f_dash, __f_back_walk, __f_walk, 
 import { AnimState2, hurtboxes } from './animstate'
 
 
+import { Spring  }from './spring'
+
+
 const quick_burst = (radius: number, start: number = 0.8, end: number = 0.2) => 
 tween([start, start, 1, end].map(_ => _ * radius), [ticks.five + ticks.three, ticks.three * 2, ticks.three * 2])
 
@@ -399,6 +402,7 @@ class PlayerFloor extends WithPlays {
 
   _init() {
 
+    this.lock = true
     let { x } = this.data.v_pos
 
     this._t_hitstop = 0
@@ -425,10 +429,16 @@ class PlayerFloor extends WithPlays {
   }
 
   _attack() {
+    if (this.lock) {
+      return 
+    }
     this._a = new AnimState2(__f_attack)
   }
 
   _horizontal(on, off) {
+    if (this.lock) {
+      return
+    }
 
     if (off !== 0) {
       this._t_off = this.life * off
@@ -839,6 +849,76 @@ class Audio extends WithPlays {
   }
 }
 
+class Countdown extends WithPlays {
+  _init() {
+
+    this.make(HungaMunga, {
+      text: '3'
+    }, ticks.half)
+    this.make(HungaMunga, {
+      text: '2'
+    }, ticks.half + ticks.seconds * 1)
+    this.make(HungaMunga, {
+      text: '1'
+    }, ticks.half + ticks.seconds * 2)
+    this.make(HungaMunga, {
+      text: 'hunga'
+    }, ticks.half + ticks.seconds * 3)
+
+
+  }
+
+  _update(dt, dt0) {
+    if (this.on_interval(ticks.seconds * 4)) {
+      this.plays.all(PlayerFloor).forEach(_ => {
+        _.lock = false
+      })
+      this.dispose()
+    }
+  }
+}
+
+class HungaMunga extends WithPlays {
+
+
+  _init() {
+    this._s_x = Spring.make(0, 200, 8)
+    this._s_x.pull(-200)
+
+    this._s_y = Spring.make(-2000, 50, 6)
+    this._s_y.pull(2000)
+  }
+
+  _update(dt: number, dt0: number) {
+    this._s_x.update(dt)
+    if (this.life > ticks.seconds) {
+      this._s_y.update(dt)
+    }
+
+    if (this.life > ticks.seconds * 3) {
+      this.dispose()
+    }
+    console.log('update')
+  }
+
+  _draw() {
+
+    let { x } = this._s_x
+    let { x: y } = this._s_y
+
+    let [_x, _y, _w, _h] = _ss[this.data.text]
+
+    this.g.texture(0xcccccc, 0, 0, 0, 0 + y, -200, x,  _w * 2, _h *2, _x, _y, _w, _h, 1024, 1024)
+  }
+}
+
+let _ss = {
+  hunga: [0, 273, 652, 120],
+  3: [0, 384, 67, 85],
+  2: [86, 384, 67, 85],
+  1: [152, 384, 67, 85],
+}
+
 export default class AllPlays extends PlayMakes {
 
   all(Ctor: any) {
@@ -886,6 +966,8 @@ export default class AllPlays extends PlayMakes {
     this.make(Cinema)
 
 		this.make(Audio)
+
+    this.make(Countdown)
   }
 
   _update(dt: number, dt0: number) {
