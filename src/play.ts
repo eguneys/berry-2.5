@@ -5,7 +5,7 @@ import { generate, psfx } from './audio'
 
 import { appr, lerp, lerp_dt } from './lerp'
 import { make_rigid, rigid_update } from './rigid'
-import { __f_dam, __f_attack, __f_back_dash, __f_dash, __f_back_walk, __f_walk, __f_idle, __f_turn } from './animstate'
+import { __f_lie, __f_vic, __f_ko, __f_ko_hit, __f_dam, __f_attack, __f_back_dash, __f_dash, __f_back_walk, __f_walk, __f_idle, __f_turn } from './animstate'
 import { AnimState2, hurtboxes } from './animstate'
 
 
@@ -365,6 +365,10 @@ class PlayerFloor extends WithPlays {
     return this._floor_x.x
   }
 
+  set _x(v: number) {
+    this._floor_x.x = v
+    this._floor_x.x0 = v
+  }
 
   get hurtboxes() {
     let { res } = this._a
@@ -402,6 +406,8 @@ class PlayerFloor extends WithPlays {
 
   _init() {
 
+    this._t_victory = ticks.seconds * 100
+
     this.lock = true
     let { x } = this.data.v_pos
 
@@ -432,6 +438,18 @@ class PlayerFloor extends WithPlays {
     if (this.lock) {
       return 
     }
+
+    if (this._p2) {
+      if (this._p2._allow_ko > 0) {
+        //this._t_hitstop = 0
+        this._a = new AnimState2(__f_ko_hit)
+        this._p2._allow_ko = -ticks.half
+        this.lock = true
+        this._p2.lock = true
+        return
+      }
+    }
+
     this._a = new AnimState2(__f_attack)
   }
 
@@ -491,13 +509,27 @@ class PlayerFloor extends WithPlays {
   }
 
   _update(dt: number, dt0: number) {
-
+    this._t_victory = appr(this._t_victory, 0, dt)
     this._t_hitstop = appr(this._t_hitstop, -ticks.seconds, dt)
+    this._allow_ko = appr(this._allow_ko, 0, dt)
+
+
+    if (this.data.tag === 'user') {
+      user_update(this)
+    } else {
+      ai_update(this)
+    }
 
     if (this._t_hitstop > 0) {
       return
     }
 
+    if (this._t_victory === 0) {
+      this.make(FtoStart, {
+        x: this._x
+      })
+      this._t_victory = -ticks.seconds * 1000
+    }
 
     if (!this._p2) {
       let op_tag = this.data.tag === 'user' ? 'ai' : 'user'
@@ -506,15 +538,37 @@ class PlayerFloor extends WithPlays {
 
     this._floor_x.force = 0
 
-    if (this.data.tag === 'user') {
-      user_update(this)
-    } else {
-      ai_update(this)
-    }
-
     this._a.update(dt, dt0)
 
     let { res, res0 } = this._a
+
+
+    if (this._allow_ko < 0) {
+      this._allow_ko = 0
+      this._a = new AnimState2(__f_ko)
+    }
+
+    if (this._a._f === __f_ko) {
+      if (res && res0) {
+        let { i } = this._a
+        if (i < ticks.one * 2 / ticks.seconds) {
+          this.make(HungaMunga, {
+            x: this._x,
+            text: 'ko'
+          })
+        }
+      }
+      if (!res) {
+        this._a = new AnimState2(__f_lie)
+      }
+    }
+
+    if (this._a._f === __f_ko_hit) {
+      if (!res) {
+        this._a = new AnimState2(__f_vic)
+        this._t_victory = ticks.seconds * 2
+      }
+    }
 
     if (this._a._f === __f_turn) {
       if (!res) {
@@ -580,10 +634,9 @@ class PlayerFloor extends WithPlays {
         let { i } = this._a
 
         if (i < ticks.one * 2 / ticks.seconds) {
+          this._allow_ko = ticks.lengths
           this.plays.audio._buff.push(1)
         }
-
-
 
         this._floor_x.force = this._floor_x.opts.max_force * -this._facing * (1 - i)
       }
@@ -669,17 +722,21 @@ class Hitstop extends WithPlays {
   _update(dt: number, dt0: number) {
 
     let { res } = this._p2._a
-    if (this._p2._a._f === __f_dam) {
+    if (this._p2._a._f === __f_dam || this._p1._a._f === __f_dam) {
       if (this._p1._t_hitstop <= -ticks.half) {
         this._p1._t_hitstop = ticks.thirds
         this._p2._t_hitstop = ticks.thirds
+        this.make(HungaMunga, {
+          text: 'attack',
+          x: this._p1._x
+        })
       }
     }
 
-    if (this._p1._a._f === __f_dam) {
+    if (this._p1._a._f === __f_ko || this._p2._a._f === __f_ko) {
       if (this._p2._t_hitstop <= -ticks.half) {
-        this._p1._t_hitstop = ticks.thirds
-        this._p2._t_hitstop = ticks.thirds
+        this._p1._t_hitstop = ticks.half
+        this._p2._t_hitstop = ticks.half
       }
     }
 
@@ -772,6 +829,12 @@ class Cinema extends WithPlays {
 
     let dz = this.d > 800 ? -500 + (this.d / 1600) * -360 : -500
 
+
+    if (this._p1._t_hitstop > 0 || this._p2._t_hitstop > 0) {
+      dz += (this._p1._t_hitstop* (ticks.one / ticks.seconds)) * 30
+    }
+
+
     this.c.o.z = lerp_dt(0.9, dt/ticks.one, this.c.o.z, dz)
 
     let d = 0.3;
@@ -795,6 +858,9 @@ const ai_update = (_p: PlayerFloor, dt: number, dt0: number) => {
 
   //_p._horizontal(h_on, h_off)
 
+  if (_p._p2 && _p._p2._allow_ko > 0) {
+    _p._attack()
+  }
   if (_p.on_interval(ticks.half)) {
     _p._attack()
   }
@@ -878,6 +944,46 @@ class Countdown extends WithPlays {
   }
 }
 
+
+class FtoStart extends WithPlays {
+
+  _init() {
+    this._p1 = this.plays.tag(PlayerFloor, 'user')
+    this._p2 = this.plays.tag(PlayerFloor, 'ai')
+
+    this._p1._x = -200
+    this._p2._x = +200
+  }
+
+  _update() {
+    this.z = -200 + Math.sin(this.life * 0.002) * 10
+
+
+    if (this.i.just_ons.find(_ => _ === 'f')) {
+      this.make(Countdown)
+      this.dispose()
+    }
+  }
+
+  _draw() {
+
+    let x = -200 
+    let y = 200
+    let z = this.z
+    let [_x, _y, _w, _h] = _ss['f']
+
+    let i = Math.sin(this.life * 0.008)
+    this.g.texture(0xcccccc, 0, 0, 0, x, y + -200 + i * 20, z,  _w * 2, _h * 2, _x, _y, _w, _h, 1024, 1024)
+
+    let [__x, __y, __w, __h] = _ss['tostart']
+
+    x += 230
+
+    this.g.texture(0xcccccc, 0, 0, 0, x, y -200, z,  __w * 2, __h * 2, __x, __y, __w, __h, 1024, 1024)
+
+  }
+}
+
 class HungaMunga extends WithPlays {
 
 
@@ -898,17 +1004,20 @@ class HungaMunga extends WithPlays {
     if (this.life > ticks.seconds * 3) {
       this.dispose()
     }
-    console.log('update')
+
+    this.z = this._s_x.x
   }
 
   _draw() {
 
+    let __x = this.data.x || 0
     let { x } = this._s_x
     let { x: y } = this._s_y
 
     let [_x, _y, _w, _h] = _ss[this.data.text]
 
-    this.g.texture(0xcccccc, 0, 0, 0, 0 + y, -200, x,  _w * 2, _h *2, _x, _y, _w, _h, 1024, 1024)
+    let i = Math.sin(this.life * 0.001)
+    this.g.texture(0xcccccc, 0, i * Math.PI * 0.2 *  100 / _w, 0, __x + y, -200, x,  _w * 2, _h *2, _x, _y, _w, _h, 1024, 1024)
   }
 }
 
@@ -917,6 +1026,10 @@ let _ss = {
   3: [0, 384, 67, 85],
   2: [86, 384, 67, 85],
   1: [152, 384, 67, 85],
+  ko: [0, 480, 180, 120],
+  attack: [0, 384, 67, 85],
+  f: [20, 630, 48, 50],
+  tostart: [64, 624, 176, 48]
 }
 
 export default class AllPlays extends PlayMakes {
@@ -967,7 +1080,9 @@ export default class AllPlays extends PlayMakes {
 
 		this.make(Audio)
 
-    this.make(Countdown)
+
+
+    this.make(FtoStart)
   }
 
   _update(dt: number, dt0: number) {
