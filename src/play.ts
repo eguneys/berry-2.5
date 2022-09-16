@@ -566,7 +566,15 @@ class PlayerFloor extends WithPlays {
 
     if (this._a._f === __f_dam) {
       if (res && res0) {
+
         let { i } = this._a
+
+        if (i < ticks.one * 2 / ticks.seconds) {
+          this.plays.audio._buff.push(1)
+        }
+
+
+
         this._floor_x.force = this._floor_x.opts.max_force * -this._facing * (1 - i)
       }
       if (!res) {
@@ -807,12 +815,19 @@ class Audio extends WithPlays {
 
   _init() {
 		this._buff = []
-    generate(() => {
-      this._ready = true
-    })
   }
 
   _update(dt: number, dt0: number) {
+
+
+
+    if (!this._gen && this.i._ready) {
+      this._gen = true
+      generate(() => {
+        this._ready = true
+      })
+    }
+
 
     if (this._ready) {
 			let _ = this._buff.pop()

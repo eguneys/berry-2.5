@@ -64,6 +64,7 @@ export class Input {
         return
       }
       e.preventDefault()
+      this._ready = true
       this._on(e.key)
     })
 
