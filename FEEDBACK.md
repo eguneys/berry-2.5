@@ -1,3 +1,12 @@
+## Feedback #2
+
+- A 2.5d fighting game for Three day Magara Jam.
+- 2 days left, looking for primitive feedback, the combat is raw just spam arrow keys while hitting f to get a kick.
+- Arrow keys to move left and right.
+- Left Left or Right Right to dash.
+- F to attack.
+- Go backwards to block an attack.
+
 
 ## Feedback
 

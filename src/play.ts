@@ -403,6 +403,16 @@ class PlayerFloor extends WithPlays {
     }
   }
 
+  _reset() {
+
+    this._x = this.data.v_pos.x
+
+    this._t_hitstop = 0
+    this._t_victory = ticks.seconds * 100
+
+    this._a = new AnimState2(__f_idle)
+
+  }
 
   _init() {
 
@@ -525,9 +535,9 @@ class PlayerFloor extends WithPlays {
     }
 
     if (this._t_victory === 0) {
-      this.make(FtoStart, {
-        x: this._x
-      })
+      
+      let c = this.plays.one(Counter)
+      c.vic(this.data.tag)
       this._t_victory = -ticks.seconds * 1000
     }
 
@@ -995,6 +1005,12 @@ class Countdown extends WithPlays {
     }, ticks.half + ticks.seconds * 3)
 
 
+    this._p1 = this.plays.tag(PlayerFloor, 'user')
+    this._p2 = this.plays.tag(PlayerFloor, 'ai')
+
+
+    this._p1._reset()
+    this._p2._reset()
   }
 
   _update(dt, dt0) {
@@ -1016,6 +1032,9 @@ class FtoStart extends WithPlays {
 
     this._p1._x = -200
     this._p2._x = +200
+    
+
+    this.make(Counter)
   }
 
   _update() {
@@ -1044,6 +1063,85 @@ class FtoStart extends WithPlays {
 
     this.g.texture(0xcccccc, 0, 0, 0, x, y -200, z,  __w * 2, __h * 2, __x, __y, __w, __h, 1024, 1024)
 
+  }
+}
+
+
+class Counter extends WithPlays {
+
+  _init() {
+
+    this._p1 = 0
+    this._p2 = 0
+
+    this._t_vic = ticks.seconds * 10000
+    this._t_reset = ticks.seconds * 10000
+  }
+
+
+  vic(tag: string) {
+    if (tag === 'user') {
+      this._p1+= 1
+    } else {
+      this._p2 += 1
+    }
+
+    if (this._p1 === 3 || this._p2 === 3) {
+      this._t_reset = ticks.seconds * 4
+      return
+    }
+
+
+
+    this._t_vic = ticks.seconds * 2
+  }
+
+  _update(dt: number, dt0: number) {
+
+
+    this._t_vic = appr(this._t_vic, 0, dt)
+    this._t_reset = appr(this._t_reset, 0, dt)
+
+    if (this._t_reset === 0) {
+      this.dispose()
+      this.make(FtoStart, {
+        x: this._x
+      })
+
+      return
+    }
+
+    if (this._t_vic === 0) {
+      this._t_vic = ticks.seconds * 30000
+      this.make(Countdown)
+    }
+  }
+
+
+  _draw() {
+
+    let c_x = this.c.o.x
+
+    let x = -460
+    let y = -60
+    let z = -50
+
+    for (let i = 0; i < 3; i++) {
+      let _on = i < this._p1 ? 'on' : 'off'
+      let [_x, _y, _w, _h] = _ss['_c_' + _on]
+
+      this.g.texture(0xcccccc, 0, 0, 0, i * _w * 2 + c_x + x, y -200, z,  _w * 2, _h * 2, _x, _y, _w, _h, 1024, 1024)
+    }
+
+
+    x += 800
+
+    for (let i = 0; i < 3; i++) {
+      let _on = i < this._p2 ? 'on' : 'off'
+      let [_x, _y, _w, _h] = _ss['_c_' + _on]
+
+      this.g.texture(0xcccccc, 0, 0, 0, i * _w * 2 + c_x + x, y -200, z,  _w * 2, _h * 2, _x, _y, _w, _h, 1024, 1024)
+    }
   }
 }
 
@@ -1092,7 +1190,9 @@ let _ss = {
   ko: [0, 480, 180, 120],
   attack: [0, 384, 67, 85],
   f: [20, 630, 48, 50],
-  tostart: [64, 624, 176, 48]
+  tostart: [64, 624, 176, 48],
+  _c_on: [13, 688, 38, 33],
+  _c_off: [56, 688, 38, 33]
 }
 
 export default class AllPlays extends PlayMakes {
