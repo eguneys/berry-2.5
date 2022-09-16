@@ -5,7 +5,7 @@ import { generate, psfx } from './audio'
 
 import { appr, lerp, lerp_dt } from './lerp'
 import { make_rigid, rigid_update } from './rigid'
-import { __f_lie, __f_vic, __f_ko, __f_ko_hit, __f_dam, __f_attack, __f_back_dash, __f_dash, __f_back_walk, __f_walk, __f_idle, __f_turn } from './animstate'
+import { __f_blo, __f_one_hit, __f_lie, __f_vic, __f_ko, __f_ko_hit, __f_dam, __f_attack, __f_back_dash, __f_dash, __f_back_walk, __f_walk, __f_idle, __f_turn } from './animstate'
 import { AnimState2, hurtboxes } from './animstate'
 
 
@@ -517,7 +517,7 @@ class PlayerFloor extends WithPlays {
     if (this.data.tag === 'user') {
       user_update(this)
     } else {
-      ai_update(this)
+      (this.data.update || ai_update)(this)
     }
 
     if (this._t_hitstop > 0) {
@@ -546,6 +546,21 @@ class PlayerFloor extends WithPlays {
     if (this._allow_ko < 0) {
       this._allow_ko = 0
       this._a = new AnimState2(__f_ko)
+    }
+
+
+    if (this._a._f === __f_blo) {
+      if (res && res0) {
+        let { i } = this._a
+
+        this._floor_x.force = this._floor_x.opts.max_force * this._facing * 1 * (0.4 - i)
+      }
+      if (!res) {
+
+
+
+        this._a = new AnimState2(__f_idle)
+      }
     }
 
     if (this._a._f === __f_ko) {
@@ -776,7 +791,12 @@ class Collision extends WithPlays {
 
     if (p2_hit && p1_hurt) {
       if (rect_rect(p2_hit, p1_hurt)) {
-        this._p1._a = new AnimState2(__f_dam)
+        console.log(this._p1._a._f)
+        if (this._p1._a._f === __f_back_walk || this._p1._a._f === __f_back_dash) {
+          this._p1._a = new AnimState2(__f_blo)
+        } else {
+          this._p1._a = new AnimState2(__f_dam)
+        }
       }
     }
 
@@ -784,7 +804,11 @@ class Collision extends WithPlays {
 
     if (p1_hit && p2_hurt) {
       if (rect_rect(p1_hit, p2_hurt)) {
-        this._p2._a = new AnimState2(__f_dam)
+        if (this._p2._a._f === __f_back_walk || this._p2._a._f === __f_back_dash) {
+          this._p2._a = new AnimState2(__f_blo)
+        } else {
+          this._p2._a = new AnimState2(__f_dam)
+        }
       }
     }
 
@@ -849,6 +873,45 @@ class Cinema extends WithPlays {
     }
     */
   }
+}
+
+const blocker_update = (_p: PlayerFloor, dt: number, dt0: number) => {
+
+  if (!_p._p2) {
+    return
+  }
+
+  let _d = Math.abs(_p._x - _p._p2._x)
+
+  if (!_p.blocker)  {
+    _p.blocker = {}
+  }
+
+
+  if (_p._p2 && _p._p2._allow_ko > 0) {
+    _p._attack()
+    return
+  }
+  // TODO whiplash
+  if (_p._p2._a._f === __f_attack) {
+    _p._attack()
+    return
+  }
+
+  if (_d < 160) {
+    _p.blocker.on = _p._facing * -1
+    _p._horizontal(_p.blocker.on, 0)
+  }
+
+
+  if (!!_p.blocker.on && _d > 160) {
+    _p._horizontal(0, _p.blocker.on)
+    _p.blocker.on = 0
+  }
+
+
+
+
 }
 
 const ai_update = (_p: PlayerFloor, dt: number, dt0: number) => {
@@ -1069,6 +1132,7 @@ export default class AllPlays extends PlayMakes {
 
     this.make(PlayerFloor, {
       tag: 'ai',
+      update: blocker_update,
       v_pos: Vec2.make(300, 0),
       z: 0
     })

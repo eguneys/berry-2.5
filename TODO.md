@@ -2,6 +2,7 @@
 
 - Block
 - One Attack
+- You win score block times
 
 ## 2nd day
 
