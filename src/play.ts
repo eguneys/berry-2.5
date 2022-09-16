@@ -514,12 +514,20 @@ class PlayerFloor extends WithPlays {
     }
 
     if (this._a._f === __f_attack) {
+
       if (res && res0) {
+
+        if (res[0] !== res0[0]) {
+          this.plays.audio._buff.push(0)
+				}
+
+
         let { i } = this._a
         if (res[0].match('att2')) {
           this._floor_x.force = this._floor_x.opts.max_force * this._facing * 1 * (0.8 - i) * (0.8 - i)
         }
       }
+
       if (!res) {
         this._a = new AnimState2(__f_idle)
       }
@@ -769,7 +777,7 @@ const ai_update = (_p: PlayerFloor, dt: number, dt0: number) => {
 
   //_p._horizontal(h_on, h_off)
 
-  if (rnd_int(50) < 4) {
+  if (_p.on_interval(ticks.half)) {
     _p._attack()
   }
 
@@ -793,6 +801,29 @@ const user_update = (_p: PlayerFloor) => {
   if (_f_on) { _p._attack() }
 }
 
+
+class Audio extends WithPlays {
+
+
+  _init() {
+		this._buff = []
+    generate(() => {
+      this._ready = true
+    })
+  }
+
+  _update(dt: number, dt0: number) {
+
+    if (this._ready) {
+			let _ = this._buff.pop()
+			if (_ !== undefined) {
+				psfx(_)
+			}
+    }
+
+  }
+}
+
 export default class AllPlays extends PlayMakes {
 
   all(Ctor: any) {
@@ -812,6 +843,10 @@ export default class AllPlays extends PlayMakes {
     return this.objects.sort((a, b) => b.z - a.z)
 
   }
+
+  get audio() {
+		return this.one(Audio)
+	}
 
   _init() {
 
@@ -834,6 +869,8 @@ export default class AllPlays extends PlayMakes {
     this.make(Hitstop)
     this.make(Collision)
     this.make(Cinema)
+
+		this.make(Audio)
   }
 
   _update(dt: number, dt0: number) {

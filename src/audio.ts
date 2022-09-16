@@ -1,8 +1,6 @@
 import { ticks } from './shared'
 import MusicPlayer from './musicplayer'
-import { song1, over } from './sounds'
-
-let data = [song1, over]
+import {  data } from './sounds'
 
 let audioCtx
 
