@@ -1343,8 +1343,12 @@ export default class AllPlays extends PlayMakes {
     this.g.texture(0xcccccc, 0, half_pi, 0, 0, 0, 0, 200, 4, 0, 0, 10, 10, 1024, 1024)
    */
 
-    this.g.texture(0xcccccc, half_pi, 0, 0, 0, 200, -100, 2000, 2000, 0, 120, 512, 120, 1024, 1024)
+    this.g.texture(0xcccccc, half_pi, 0, 0, 0, 200, -100, 2000, 512, 0, 120, 512, 128, 1024, 1024)
+    this.g.texture(0xcccccc, half_pi, 0, 0, 0, 202, -500, 2000, 512, 0, 120, 512, 128, 1024, 1024)
     this.g.texture(0xcccccc, 0, 0, 0, 0, 0, 100, 2000, 2000, 0, 0, 256, 120, 1024, 1024)
+
+    this.g.texture(0xcccccc, 0, 0, half_pi * 0.3, 0, 100, 180, 500, 250, 0, 0, 400, 200, 1024, 1024)
+    this.g.texture(0xcccccc, 0, 0, half_pi * 0.7, 100, 0, 120, 500, 250, 0, 0, 400, 200, 1024, 1024)
 
     this.g.texture(0xcccccc, 0, -half_pi * 0.3, half_pi, -500, 0, 100, 2000, 2000, 0, 0, 256, 120, 1024, 1024)
     this.g.texture(0xcccccc, 0, 0, half_pi * 0.3, 1500, 0, 100, 2000, 2000, 0, 0, 256, 120, 1024, 1024)
