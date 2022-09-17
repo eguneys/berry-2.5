@@ -1038,7 +1038,7 @@ class Audio extends WithPlays {
       this._gen = true
       generate(() => {
         this._ready = true
-        psfx(2, true)
+        psfx(2, true, 0.01)
       })
     }
 

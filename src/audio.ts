@@ -83,8 +83,8 @@ function VSound(_sounds) {
 	}
 
 
-	return (_, loop = false) => {
-    return playSound(_sounds[_], 1, 0, .1, loop)
+	return (_, loop = false, volume = 0.1) => {
+    return playSound(_sounds[_], 1, 0, volume, loop)
 	}
 }
 
@@ -92,10 +92,10 @@ function VSound(_sounds) {
 
 let cool = 0
 
-export function psfx(n: number, loop: boolean) {
+export function psfx(n: number, loop: boolean, volume: number) {
 
   if (cool <= 0) {
-    return sfx(n, loop)
+    return sfx(n, loop, volume)
   }
   cool += ticks.sixth
 

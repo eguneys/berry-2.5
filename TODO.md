@@ -11,3 +11,8 @@
 - Sound
 - Different Characters - AI
 
+# 3rd day
+
+- Background desaturate
+- Menu - instructions - congratz
+- Kick delay
