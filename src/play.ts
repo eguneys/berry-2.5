@@ -5,7 +5,7 @@ import { generate, psfx } from './audio'
 
 import { appr, lerp, lerp_dt } from './lerp'
 import { make_rigid, rigid_update } from './rigid'
-import { __f_blo, __f_one_hit, __f_lie, __f_vic, __f_ko, __f_ko_hit, __f_dam, __f_attack, __f_back_dash, __f_dash, __f_back_walk, __f_walk, __f_idle, __f_turn } from './animstate'
+import { __f_whip, __f_blo, __f_one_hit, __f_lie, __f_vic, __f_ko, __f_ko_hit, __f_dam, __f_attack, __f_back_dash, __f_dash, __f_back_walk, __f_walk, __f_idle, __f_turn } from './animstate'
 import { AnimState2, hurtboxes } from './animstate'
 
 
@@ -460,7 +460,10 @@ class PlayerFloor extends WithPlays {
       }
     }
 
-    if (this._a._f === __f_attack) {
+    if (this._a._f === __f_ko_hit) {
+    } else if (this._a._f === __f_whip) {
+    } else if (this._a._f === __f_attack) {
+      this._next_attack = new AnimState2(__f_ko_hit)
     } else {
       this._a = new AnimState2(__f_attack)
     }
@@ -470,6 +473,11 @@ class PlayerFloor extends WithPlays {
     if (this.lock) {
       return
     }
+
+    if (this._a._f === __f_whip) {
+      return
+    }
+
 
     if (off !== 0) {
       this._t_off = this.life * off
@@ -525,7 +533,6 @@ class PlayerFloor extends WithPlays {
     this._t_victory = appr(this._t_victory, 0, dt)
     this._t_hitstop = appr(this._t_hitstop, -ticks.seconds, dt)
     this._allow_ko = appr(this._allow_ko, 0, dt)
-
 
     if (this.data.tag === 'user') {
       user_update(this)
@@ -595,11 +602,25 @@ class PlayerFloor extends WithPlays {
       }
     }
 
+
+    if (this._a._f === __f_whip) {
+      if (!res) {
+        this._a = new AnimState2(__f_idle)
+      }
+    }
+
     if (this._a._f === __f_ko_hit) {
+     if (this._p2._a._f === __f_ko || this._p2._a._f === __f_lie) {
       if (!res) {
         this._a = new AnimState2(__f_vic)
         this._t_victory = ticks.seconds * 2
       }
+     } else {
+       if (!res) {
+         this._a = new AnimState2(__f_whip)
+       }
+     }
+     
     }
 
     if (this._a._f === __f_turn) {
@@ -619,13 +640,17 @@ class PlayerFloor extends WithPlays {
 
 
         let { i } = this._a
-        if (res[0].match('att2')) {
+        if (res[0].match('att_2')) {
           this._floor_x.force = this._floor_x.opts.max_force * this._facing * 1 * (0.8 - i) * (0.8 - i)
+          if (this._next_attack) {
+            this._a = this._next_attack
+            this._next_attack = undefined
+          }
         }
       }
 
       if (!res) {
-        this._a = new AnimState2(__f_idle)
+        this._a = new AnimState2(__f_whip)
       }
     }
     if (this._a._f === __f_dash) {
@@ -808,7 +833,6 @@ class Collision extends WithPlays {
 
     if (p2_hit && p1_hurt) {
       if (rect_rect(p2_hit, p1_hurt)) {
-        console.log(this._p1._a._f)
         if (this._p1._a._f === __f_back_walk || this._p1._a._f === __f_back_dash) {
           this._p1._a = new AnimState2(__f_blo)
         } else {
@@ -923,17 +947,24 @@ const attacker_update = (_p: PlayerFloor, dt: number, dt0: number) => {
     _p.attacker.on = 0
   }
 
-  if (_p._p2 && _p._p2._allow_ko > 0) {
+  if (_p._p2 && _p._p2._allow_ko > ticks.sixth && _p.on_interval(ticks.five)) {
     _p._attack()
     return
   }
  
-
-    if (_d < 260 && (_p._p2._a.res[0] === 'att_2' || _p.on_interval(ticks.sixth))) {
+  if ((_p._p2._a.res[0].match('whip'))) {
+    if (_d < 100) {
       _p._attack()
+    } else if (_d < 400) {
+      _p.attacker.on = _p._facing
+      _p._horizontal(_p.attacker.on, _p._facing)
     }
+  }
 
 
+  if (_d < 200) {
+    _p._attack()
+  }
 
 }
 
@@ -950,25 +981,32 @@ const blocker_update = (_p: PlayerFloor, dt: number, dt0: number) => {
   }
 
 
-  if (_p._p2 && _p._p2._allow_ko > 0) {
+  if (_p._p2 && _p._p2._allow_ko > ticks.half) {
     _p._attack()
     return
   }
-  // TODO whiplash
   if (_p._p2._a._f === __f_attack) {
 
-    if (_d < 160) {
+    if (_d < 260) {
       _p.blocker.on = _p._facing * -1
       _p._horizontal(_p.blocker.on, 0)
+      return
     }
 
-    if (_d < 160 && _p._p2._a.res[0] === 'att_2') {
-      _p._attack()
-    }
-    return
   }
 
-  if (_d < 100) {
+  if ((_p._p2._a.res[0].match('whip'))) {
+    if (_d < 100) {
+      _p._attack()
+    } else if (_d < 400) {
+      _p.attacker.on = _p._facing
+      _p._horizontal(_p.attacker.on, _p._facing)
+    }
+  }
+
+
+
+  if (_d < 200) {
     _p.blocker.on = _p._facing * -1
     _p._horizontal(_p.blocker.on, 0)
   }
@@ -1038,7 +1076,7 @@ class Audio extends WithPlays {
       this._gen = true
       generate(() => {
         this._ready = true
-        psfx(2, true, 0.01)
+        psfx(2, true, 0.008)
       })
     }
 

@@ -46,7 +46,8 @@ let _ff = [
   `lie@432,0,113,103 1`,
   `vic@144,240,70,120 1`,
   `blo@70,360,70,120 1`,
-  `onehit@576,130,124,130 3`
+  `onehit@576,130,124,130 3`,
+  `whip@${576 + 124 * 2},130,124,130 1`
 ]
 
 
@@ -58,15 +59,16 @@ export let __f_idle = `i@0.2 _l`
 export let __f_turn = `tt@0.1 _`
 export let __f_dash = `d@0.2 _`
 export let __f_back_dash = `bd@0.2 _`
-export let __f_attack = `att@0.1 _`
+export let __f_attack = `att@0.15 _`
 export let __f_dam = `dam@0.2 _`
-export let __f_ko = `ko@0.5 _`
+export let __f_ko = `ko@0.2 _`
 export let __f_ko_hit = `koh@0.5 _`
 export let __f_lie = `lie@0.3 _l`
 export let __f_vic = `vic@0.3 _l`
 
 export let __f_blo = `blo@0.2 _`
 export let __f_one_hit = `onehit@0.3 _`
+export let __f_whip = `whip@0.4 _`
 
 
 
@@ -79,11 +81,14 @@ let _hu = [
   `bw_0@0,40,30,100`,
   `bw_1@0,40,30,100`,
   `bw_2@0,40,30,100`,
+  `whip_0@0,50,30,100`,
+  `whip_1@0,50,30,100`,
   `att_0@-30,30,30,100`
 ]
 
 let _hi = [
-  `att_1@50,30,60,30`
+  `att_1@50,30,60,30`,
+  `koh_0@50,30,60,30`
 ]
 
 
