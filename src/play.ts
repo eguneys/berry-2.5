@@ -460,10 +460,13 @@ class PlayerFloor extends WithPlays {
       }
     }
 
-    this._a = new AnimState2(__f_attack)
+    if (this._a._f === __f_attack) {
+    } else {
+      this._a = new AnimState2(__f_attack)
+    }
   }
 
-  _horizontal(on, off) {
+  _horizontal(on, off, been_on) {
     if (this.lock) {
       return
     }
@@ -510,9 +513,9 @@ class PlayerFloor extends WithPlays {
       }
 
     } else if (this._a._f === __f_idle) {
-      if (this._facing === on) {
+      if (this._facing === on || this._facing === been_on) {
         this._a = new AnimState2(__f_walk)
-      } else if (this._facing === -on) {
+      } else if (this._facing === -on || this._facing === -been_on) {
         this._a = new AnimState2(__f_back_walk)
       }
     }
@@ -527,7 +530,11 @@ class PlayerFloor extends WithPlays {
     if (this.data.tag === 'user') {
       user_update(this)
     } else {
-      (this.data.update || ai_update)(this)
+      if (this.between_interval(ticks.seconds * 2)) {
+        attacker_update(this)
+      } else {
+        (this.data.update || ai_update)(this)
+      }
     }
 
     if (this._t_hitstop > 0) {
@@ -885,6 +892,51 @@ class Cinema extends WithPlays {
   }
 }
 
+const attacker_update = (_p: PlayerFloor, dt: number, dt0: number) => {
+
+  if (!_p.attacker)  {
+    _p.attacker = {}
+  }
+
+
+
+  if (!_p._p2) {
+    return
+  }
+
+  let _d = Math.abs(_p._x - _p._p2._x)
+
+
+  if (_d > 200 && _p.attacker.on === _p._facing && (_p.on_interval(ticks.half) && !_p.on_interval(ticks.half + ticks.thirds))) {
+    _p.attacker.on = _p._facing * -1
+    _p._horizontal(_p.attacker.on, _p._facing)
+    return
+  }
+
+  if (_d > 300 && _p.attacker.on === 0 && _p.on_interval(ticks.thirds)) {
+    _p.attacker.on = _p._facing
+    _p._horizontal(_p.attacker.on, 0)
+  }
+
+  if (_d < 300 || _p.on_interval(ticks.half)) {
+    _p._horizontal(0, _p.attacker.on)
+    _p.attacker.on = 0
+  }
+
+  if (_p._p2 && _p._p2._allow_ko > 0) {
+    _p._attack()
+    return
+  }
+ 
+
+    if (_d < 260 && (_p._p2._a.res[0] === 'att_2' || _p.on_interval(ticks.sixth))) {
+      _p._attack()
+    }
+
+
+
+}
+
 const blocker_update = (_p: PlayerFloor, dt: number, dt0: number) => {
 
   if (!_p._p2) {
@@ -904,17 +956,25 @@ const blocker_update = (_p: PlayerFloor, dt: number, dt0: number) => {
   }
   // TODO whiplash
   if (_p._p2._a._f === __f_attack) {
-    _p._attack()
+
+    if (_d < 160) {
+      _p.blocker.on = _p._facing * -1
+      _p._horizontal(_p.blocker.on, 0)
+    }
+
+    if (_d < 160 && _p._p2._a.res[0] === 'att_2') {
+      _p._attack()
+    }
     return
   }
 
-  if (_d < 160) {
+  if (_d < 100) {
     _p.blocker.on = _p._facing * -1
     _p._horizontal(_p.blocker.on, 0)
   }
 
 
-  if (!!_p.blocker.on && _d > 160) {
+  if (!!_p.blocker.on && _d > 100) {
     _p._horizontal(0, _p.blocker.on)
     _p.blocker.on = 0
   }
@@ -942,6 +1002,9 @@ const ai_update = (_p: PlayerFloor, dt: number, dt0: number) => {
 
 const user_update = (_p: PlayerFloor) => {
 
+  let _left_been_on = _p.i.been_ons.find(_ => _[0] === 'ArrowLeft'),
+    _right_been_on = _p.i.been_ons.find(_ => _[0] === 'ArrowRight')
+
   let _left_on = _p.i.just_ons.find(_ => _ === 'ArrowLeft'),
     _right_on = _p.i.just_ons.find(_ => _ === 'ArrowRight')
 
@@ -953,8 +1016,9 @@ const user_update = (_p: PlayerFloor) => {
   let h_on = _left_on ? -1 : _right_on ? 1 : 0
   let h_off = _left_off ? -1 : _right_off ? 1 : 0
 
+  let _h_been = _left_been_on ? -1 : _right_been_on ? 1 : 0
 
-  _p._horizontal(h_on, h_off)
+  _p._horizontal(h_on, h_off, _h_been)
   if (_f_on) { _p._attack() }
 }
 

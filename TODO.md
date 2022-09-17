@@ -1,5 +1,6 @@
 ## Today
 
+- WhipPunish
 - Block
 - One Attack
 - You win score block times
